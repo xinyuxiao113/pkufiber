@@ -3,4 +3,5 @@
 configs/* 
 data/* 
 experiments/*
+pkufiber.egg-info
 run.out
