@@ -1,0 +1,12 @@
+numpy
+scipy
+matplotlib
+pandas
+h5py
+pyyaml
+scikit-commpy
+tqdm
+tensorboard
+torch
+jax
+flax

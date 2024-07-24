@@ -1,0 +1,6 @@
+.vscode 
+.pytest_cache
+configs/* 
+data/* 
+experiments/*
+run.out

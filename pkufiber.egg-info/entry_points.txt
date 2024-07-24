@@ -1,0 +1,5 @@
+[console_scripts]
+pkufiber_compensation = pkufiber.data.compensation:main
+pkufiber_simulation = pkufiber.data.generator:main
+pkufiber_train_eq = scripts.train_eq:main
+pkufiber_train_ldbp = scripts.train_ldbp:main
