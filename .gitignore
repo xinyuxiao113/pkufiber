@@ -5,4 +5,5 @@ data/*
 experiments/*
 pkufiber.egg-info
 run.out
+__pycache__/
 *.pyc
