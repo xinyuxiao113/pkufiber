@@ -44,3 +44,20 @@ def adaptive_ber_v3(predict, truth, epoch=0):
     dis = torch.max(torch.abs(error.real), torch.abs(error.imag))
     return torch.mean(well(dis, mu))
 
+def adaptive_ber_v4(predict, truth, epoch=0):
+    mu = 8*1.1**min(epoch, 10)
+    error = predict - truth
+    dis = torch.max(torch.abs(error.real), torch.abs(error.imag))
+    return torch.mean(well(dis, mu))
+
+def adaptive_ber_v5(predict, truth, epoch=0):
+    mu = 8*1.1**10
+    error = predict - truth
+    dis = torch.max(torch.abs(error.real), torch.abs(error.imag))
+    return torch.mean(well(dis, mu))
+
+def adaptive_ber_v6(predict, truth, epoch=0):
+    mu = 8*1.1**min(epoch+10, 20)
+    error = predict - truth
+    dis = torch.max(torch.abs(error.real), torch.abs(error.imag))
+    return torch.mean(well(dis, mu))

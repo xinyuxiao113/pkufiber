@@ -1,6 +1,7 @@
 # pkufiber/dsp/nonlinear_compensation/__init__.py
 
 from .exploration.pbc_nn import EqAMPBCaddNN, EqAMPBCaddFNO
+from .exploration.new_idea import EqSoNN, EqAMPBCaddConv
 from .baselines import cdc, dbp
 from .pbc import IndexType
 from .pbc import EqPBC, EqAMPBC, EqAMPBCstep, EqPBCstep, MultiStepAMPBC, MultiStepPBC, EqPBCNN, EqSoPBC
@@ -10,6 +11,8 @@ from .fno.fno import EqFno
 
 
 __all__ = [
+    "EqAMPBCaddConv",
+    "EqSoNN",
     "EqAMPBCaddNN",
     "EqAMPBCaddFNO",
     "cdc",

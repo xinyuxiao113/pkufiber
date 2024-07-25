@@ -50,7 +50,6 @@ def check_data_config(config, overlaps:int=0):
     '''
     define the window size for training and testing data.
     '''
-    assert config['model_name'] in ['EqPBC', 'EqAMPBC', 'EqAMPBCaddNN', 'MultiStepAMPBC', 'MultiStepPBC', 'EqBiLSTM', 'EqMLP', 'EqCNNBiLSTM', 'EqFno', 'EqSoPBC', 'EqPBCNN']
     if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno']:
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps
@@ -85,7 +84,7 @@ def define_optimizer(net, config):
     # optimizer = AlterOptimizer([net.pbc.parameters(), net.nn.parameters()], [0, 0.001], alternate=False)
 
     if config['model_name'] in ['EqAMPBCaddNN', 'EqAMPBCaddFNO']:
-        if 'pbc_path' not in config.keys():
+        if 'pbc_path' not in config.keys() and 'model_path' not in config.keys():
             print('Train pbc + nn. Use different learning rate for pbc and nn !', flush=True)
             optimizer = torch.optim.Adam([{'params': net.pbc.parameters(), 'lr': config['lr']}, {'params': net.nn.parameters(), 'lr': config['lr']*10}])
         else:
@@ -201,6 +200,9 @@ def main():
         for param in net.pbc.parameters():
             param.requires_grad = False
         print('Freeze pbc parameters !', flush=True)
+
+    if 'model_path' in config.keys():
+        load_param(net, config['model_path'])
 
     if config['model_name'] == 'EqAMPBCaddNN' and 'pbc_path' in config.keys():
         load_param(net.pbc, config['pbc_path'])
