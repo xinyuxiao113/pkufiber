@@ -22,11 +22,10 @@ def write_log(writer, epoch, train_loss, metric):
     metric: dict
     '''
     writer.add_scalar('Loss/train',  train_loss, epoch)
-    writer.add_scalar('Loss/Test', metric['MSE'], epoch)
+    writer.add_scalar('Loss/test', metric['MSE'], epoch)
     writer.add_scalar('Metric/SNR', metric['SNR'], epoch)
     writer.add_scalar('Metric/BER', metric['BER'], epoch)
     writer.add_scalar('Metric/Qsq', metric['Qsq'], epoch)
-    print(epoch, 'Train MSE:',  train_loss, 'Test MSE:', metric['MSE'],  'Qsq:', metric['Qsq'], flush=True)
     
 
 def load_model(model_name, model_info):
@@ -87,10 +86,13 @@ def test_model(net, test_loader, taps=32, device='cuda:0', ber_discard=20000):
     z2 = torch.cat(z2_list, dim=0)
     
     mse_value = mse(z1[ber_discard:], z2[ber_discard:])
+    power_value = torch.mean(torch.abs(z2[ber_discard:])**2).item()
     ber = np.mean(pf.ber(z1[ber_discard:], z2[ber_discard:])['BER'])
     q_path = pf.qfactor_path(z1, z2, Ntest=10000, stride=1000)
+    snr = 10 * np.log10(power_value / mse_value)
+    
 
-    return {'MSE': mse_value, 'BER': ber, 'Qsq': pf.qfactor(ber), 'Qsq_path': q_path}, (z1, z2)
+    return {'MSE': mse_value, 'SNR': snr, 'BER': ber, 'Qsq': pf.qfactor(ber), 'Qsq_path': q_path}, (z1, z2)
 
 
 
@@ -115,6 +117,10 @@ def train_model(writer, net: nn.Module, conv: nn.Module, train_loader, test_load
     # setting
     loss_fn = mse_rotation_free  # MSE
 
+    metric, (rx, tx) = test_model(net, test_loader, taps=32, device=device)
+    print('Test BER: %.5f, Qsq: %.5f, MSE: %.5f' % (metric['BER'], metric['Qsq'], metric['MSE']), flush=True)
+    write_log(writer, 0, 0, metric)
+
     for epoch in range(0, epochs + 1): 
         N = len(train_loader)
         train_loss = 0
@@ -138,10 +144,7 @@ def train_model(writer, net: nn.Module, conv: nn.Module, train_loader, test_load
 
         metric, (rx, tx) = test_model(net, test_loader, taps=32, device=device)
 
-        writer.add_scalar('Loss/train', train_loss/N, epoch)
-        writer.add_scalar('Loss/test', metric['MSE'], epoch)
-        writer.add_scalar('Metric/Qsq', metric['Qsq'], epoch)
-        writer.add_scalar('Metric/BER', metric['BER'], epoch)
+        write_log(writer, epoch, train_loss/len(train_loader), metric)
         
         # plot res['Qsq_path'] in tensorboard, Qsq_path is a list of Qsq values
         fig = plt.figure(figsize=(5,5))

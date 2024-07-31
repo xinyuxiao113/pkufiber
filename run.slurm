@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH -J xinyu-simulation            # Job名
-#SBATCH -o ./run.out           # 输出, 目录./out必须存在，否则无法成功提交job. 也可删除此行由系统自动指定.
-#SBATCH --qos=normal        # qos(quality of service): normal or short or debug, 对应不同优先级及最大可用时长.
-#SBATCH -p GPUA800          # 指定partition: geforce,k80,etc.
+#SBATCH -o run.out           # 输出, 目录./out必须存在，否则无法成功提交job. 也可删除此行由系统自动指定.
+#SBATCH --qos=short        # qos(quality of service): normal or short or debug, 对应不同优先级及最大可用时长.
+#SBATCH -p RTX3090          # 指定partition: geforce,k80,etc.
 #SBATCH --cpus-per-task=8  # 申请 cpu core 数; 可用内存与申请 cpu core 数成正比.
 #SBATCH --mem=40G          # 申请10G内存
 #SBATCH --gres=gpu:1       # 申请 gpu 数
@@ -11,7 +11,8 @@
 
 # 上述 SBATCH 参数不指定时均有系统指定的默认值
 
-mamba activate fiber
+
+./scripts/train_eq.sh 80G_3ch_6db_sonn_v1  configs/dsp/sonn.yaml 
 
 # ./scripts/train_eq.sh 80G_3ch_6db_ampbc_v3  configs/0723/ampbc.yaml 
 
@@ -33,5 +34,5 @@ mamba activate fiber
 
 # ./scripts/train_eq.sh 80G_3ch_6db_ampbc_v3  configs/0723/ampbc.yaml 
 # ./scripts/train_eq.sh 80G_3ch_6db_ampbcaddnn_v4  configs/0723/ampbcaddnn.yaml 
-./scripts/train_eq.sh 80G_3ch_6db_sopbc_v1  configs/0723/sopbc.yaml 
+# ./scripts/train_eq.sh 80G_3ch_6db_sopbc_v1  configs/0723/sopbc.yaml 
 # ./scripts/train_eq.sh 80G_3ch_6db_ampbcaddfno_v1  configs/0723/ampbcaddfno.yaml 

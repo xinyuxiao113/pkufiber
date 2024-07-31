@@ -94,20 +94,11 @@ class PbcDBP(nn.Module):
                 for _ in range(d_num)
             ]
         )
-        self.Nkernel = nn.ParameterList(
-            [
-                nn.Parameter(
-                    torch.zeros(
-                        self.Nmodes, self.Nmodes, self.ntaps, dtype=torch.float32
-                    )
-                )
-                for _ in range(n_num)
-            ]
-        )  # Nonlinear kernel [Nmodes, Nmodes, ntaps]
+
 
         self.pbc = nn.ModuleList(
             [
-                EqAMPBCstep(M=self.ntaps, rho=pbc_rho, fwm_share=False, decision=False)
+                EqAMPBCstep(M=self.ntaps, rho=pbc_rho, fwm_share=True, decision=False)
                 for _ in range(n_num)
             ]
         )
@@ -126,9 +117,6 @@ class PbcDBP(nn.Module):
         assert signal.val.dtype == torch.complex64, "Input signal must be complex type."
         x = signal.val  # [batch, L*sps, Nmodes]
         t = copy.deepcopy(signal.t)  # [start, stop, sps]
-        batch = x.shape[0]
-
-        P = 1e-3 * 10 ** (task_info[:, 0] / 10) / self.Nmodes  # Power [W]
 
         for i in range(self.step):
             # Linear step
@@ -138,23 +126,10 @@ class PbcDBP(nn.Module):
                 x.shape[0], self.dtaps
             )
             x = dconv(x, Dk, stride=1)  # [batch, L*sps - dtaps + 1, Nmodes]
-            t.conv1d_t(self.dtaps, stride=1)
-
-            # Nonlinear step
-            start, stop = t.start, t.stop
-            t.conv1d_t(self.ntaps, stride=1)
-            phi = nconv(
-                torch.abs(x) ** 2,
-                self.Nkernel[min(i, len(self.Nkernel) - 1)].expand(
-                    x.shape[0], self.Nmodes, self.Nmodes, self.ntaps
-                ),
-                1,
-            )
-            # x = x[:, t.start - start : t.stop - stop + x.shape[1]] * torch.exp(
-            #     1j * phi * self.gamma * P[:, None, None] * self.dz
-            # ) 
             x = self.pbc[min(i, len(self.pbc) - 1)](x, task_info)
-            # [batch, L*sps - dtaps + 1, Nmodes]
+            # x = x[:,self.ntaps // 2: -(self.ntaps//2),:]
+            t.conv1d_t(self.dtaps, stride=1)
+            t.conv1d_t(self.ntaps, stride=1)
 
         return TorchSignal(x, t)
 

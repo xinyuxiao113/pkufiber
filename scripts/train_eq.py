@@ -204,7 +204,13 @@ def main():
     if 'model_path' in config.keys():
         load_param(net, config['model_path'])
 
-    if config['model_name'] == 'EqAMPBCaddNN' and 'pbc_path' in config.keys():
+    if config['model_name'] == 'EqSoNN' and 'pbc_path' in config.keys():
+        load_param(net.pbc, config['pbc_path'])
+        for param in net.pbc.parameters():
+            param.requires_grad = False
+        print('EqSoNN: Load pbc params and Freeze pbc parameters !', flush=True)
+
+    if config['model_name'] in ['EqAMPBCaddNN', 'EqSoNN'] and 'pbc_path' in config.keys():
         load_param(net.pbc, config['pbc_path'])
     
     if config['model_name'] == 'EqAMPBCaddNN' and 'nn_path' in config.keys():

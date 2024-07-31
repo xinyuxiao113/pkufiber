@@ -14,6 +14,7 @@ Rs = 40
 Nch = 1
 Nmodes = 2
 Pch = 2
+decision = False
 
 
 def get_loader(path: str, window_size: int=41, num_symb: int=100000):
@@ -52,9 +53,10 @@ def feature_extraction(Rx_window: torch.Tensor, P: torch.Tensor, rho:float=-1, d
 
 class RegressionPBC:
 
-    def __init__(self, window_size=41, rho=1):
+    def __init__(self, window_size=41, rho=1, decision=decision):
         self.window_size = window_size
         self.rho = rho 
+        self.decision = decision
         self.coeffs = torch.zeros(1)
         self.indexs = []
 
@@ -65,7 +67,7 @@ class RegressionPBC:
         bias = Tx - Rx
 
         # fit data
-        features, indexs = feature_extraction(Rx_window, P, rho = self.rho)
+        features, indexs = feature_extraction(Rx_window, P, rho = self.rho, decision=self.decision)
         weight = pbc.kernel(features, bias, None, p=p, gamma=gamma, k_type='p-gamma')
         coeffs = pbc.fit(features, bias, weight=weight, pol_sep=True, lamb_l2=lamb_l2)
         self.coeffs = coeffs 
@@ -90,7 +92,7 @@ class RegressionPBC:
     
     def process(self, Rx_window, P):
         Rx = Rx_window[:,self.window_size//2]
-        features, indexs = feature_extraction(Rx_window, P, rho=self.rho)
+        features, indexs = feature_extraction(Rx_window, P, rho=self.rho, decision=self.decision)
         bias_hat = pbc.predict(self.coeffs, features)
         return Rx + bias_hat
         
