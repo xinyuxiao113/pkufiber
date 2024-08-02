@@ -3,7 +3,7 @@
 from .exploration.pbc_nn import EqAMPBCaddNN, EqAMPBCaddFNO
 from .exploration.new_idea import EqSoNN, EqAMPBCaddConv
 from .baselines import cdc, dbp
-from .pbc import IndexType
+from .pbc import IndexType, EqFrePBC
 from .pbc import EqPBC, EqAMPBC, EqAMPBCstep, EqPBCstep, MultiStepAMPBC, MultiStepPBC, EqPBCNN, EqSoPBC
 from .ldbp import FDBP, MetaDBP, downsamp
 from .nneq import EqCNNBiLSTM, EqBiLSTM, EqMLP, EqID
@@ -11,6 +11,7 @@ from .fno.fno import EqFno
 
 
 __all__ = [
+    "EqFrePBC",
     "EqAMPBCaddConv",
     "EqSoNN",
     "EqAMPBCaddNN",

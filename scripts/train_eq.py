@@ -50,7 +50,7 @@ def check_data_config(config, overlaps:int=0):
     '''
     define the window size for training and testing data.
     '''
-    if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno']:
+    if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 'EqFrePBC']:
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps
         config['train_data']['Tx_window'] = True
@@ -111,7 +111,7 @@ def test_model(net, dataloader, device='cuda:0'):
             PBC = net(Rx, info)                                # [batch,  Nomdes]  or [batch, window_size - overlaps,  Nomdes]
             assert PBC.ndim == Tx.ndim
             if Tx.ndim == 3:
-                Tx = Tx[:, net.overlaps//2:-net.overlaps//2, :]
+                Tx = Tx[:, net.overlaps//2:Tx.shape[1]-net.overlaps//2, :]
             power_value += mse(Tx, 0).item() 
             mse_value += mse(PBC, Tx).item()
             ber_value += np.mean(ber(PBC, Tx)['BER'])

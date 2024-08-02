@@ -11,6 +11,10 @@ from pkufiber.dsp.nonlinear_compensation.op import triplets, trip_op, get_power
 
 from pkufiber.dsp.nonlinear_compensation.pbc.features import TripletFeatures, IndexType
 
+'''
+每个模型都需要 M， overlaps参数
+'''
+
 
 class EqPBC(nn.Module):
     """
@@ -25,9 +29,10 @@ class EqPBC(nn.Module):
     def __init__(self, M: int = 41, rho: float=1., index_type: Union[IndexType, str]="reduce-1", pol_share: bool=False, decision=False):
         super(EqPBC, self).__init__()
         assert M % 2 == 1, "M must be odd."
+        self.M = M
+        self.overlaps = M - 1
         self.features = TripletFeatures(M, rho, index_type, decision)
         self.pol_num = 1 if pol_share else 2
-        self.overlaps = M - 1
         self.nn = nn.ModuleList(
             [
                 ComplexLinear(self.features.hdim, 1, bias=False)
