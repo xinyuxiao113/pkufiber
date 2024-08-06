@@ -50,7 +50,7 @@ def check_data_config(config, overlaps:int=0):
     '''
     define the window size for training and testing data.
     '''
-    if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 'EqFrePBC']:
+    if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep']:
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps
         config['train_data']['Tx_window'] = True
@@ -239,9 +239,10 @@ def main():
     # train_data = OldData(mode='train',window_size=41, num_symb=4000000, truncate=10000)
     # test_data = OldData(mode='test', window_size=41, num_symb=100000, truncate=10000)
     train_loader = DataLoader(train_data, batch_size=config['batch_size'], shuffle=True, drop_last=True)
-    test_loader = DataLoader(test_data, batch_size=config['batch_size'], shuffle=False, drop_last=True)
-    print('Train Data number:',len(train_data))
-    print('Test Data number:',len(test_data))
+    if 'test_batch_size' not in config.keys(): config['test_batch_size'] = config['batch_size']
+    test_loader = DataLoader(test_data, batch_size=config['test_batch_size'], shuffle=False, drop_last=True)
+    print('Train Data number:',len(train_data), 'length of train_loader:', len(train_loader))
+    print('Test Data number:',len(test_data), 'length of test_loader:', len(test_loader))
 
     # loss function 
     need_weight = False

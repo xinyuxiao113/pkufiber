@@ -1,3 +1,7 @@
+'''
+Pure Frequency-domain Digital Back Propagation. 
+'''
+
 import torch, copy, numpy as np, matplotlib.pyplot as plt
 import torch.nn.functional as F, torch.nn.init as init, torch.nn as nn
 from typing import Union, Tuple
@@ -5,10 +9,10 @@ from typing import Union, Tuple
 from pkufiber.op import get_beta2, get_beta1
 from pkufiber.core import TorchSignal, TorchTime, TorchInput
 from pkufiber.dsp.op import dispersion_kernel, dconv, nconv
-from pkufiber.dsp.layers import MLP, Parameter
+from pkufiber.dsp.layers import MLP, Parameter, ComplexLinear, ComplexConv1d
 
 
-class FDBP(nn.Module):
+class FreqDBP(nn.Module):
     """
     Digital Back Propagation (DBP) with hyper-network for optical communication systems.
 
@@ -39,11 +43,10 @@ class FDBP(nn.Module):
         self,
         Nmodes: int,
         step: int,
-        dtaps: int,
-        ntaps: int,
-        d_share: bool = True,
-        n_share: bool = True,
-        d_train: bool = False,
+        M: int = 41,
+        rho: float = 1,
+        overlaps: int=100,
+        
         L: float = 2000e3,
         gamma: float = 0.0016567,
         D: float = 16.5,
@@ -51,57 +54,42 @@ class FDBP(nn.Module):
         Fc: float = 299792458 / 1550e-9,
         Fi: float = 299792458 / 1550e-9,
     ):
-        super(FDBP, self).__init__()
+        super(FreqDBP, self).__init__()
         self.Nmodes = Nmodes
         self.step = step
-        self.dtaps = dtaps
-        self.ntaps = ntaps
-        self.d_share = d_share
-        self.n_share = n_share
-        self.d_train = d_train
+        self.M = M 
+        self.rho = rho
+        self.index = self.get_index()
         self.dz = L / step  # Step size in meters
         self.gamma = gamma
         self.D = D
         self.Fc = Fc
         self.Fi = Fi
         self.Fs = Fs
-        self.overlaps = step * ((dtaps - 1) + (ntaps - 1)) // 2
+        self.overlaps = overlaps
+        self.beta2 = get_beta2(self.D, self.Fc) / 1e3            # Second-order dispersion coefficient [s^2/m]
+        self.beta1 = get_beta1(self.D, self.Fc, self.Fi) / 1e3   # First-order dispersion coefficient [s/m]
+        self.fc = ComplexLinear(len(self.index), 1)
+    
+    def get_index(self):
+        S = []
+        for n1 in range(-(self.M//2), self.M//2):
+            for n2 in range(-(self.M//2), self.M//2):
+                if abs(n1*n2) <= self.rho * (self.M//2):
+                    S.append((n1, n2))
+        return S
+    
+    def nonlinear_step(self, x_freq: torch.Tensor, P: torch.Tensor):
+        features = []
+        for (n1, n2) in self.index:
+            A = torch.roll(x_freq, shifts=n1, dims=1)  * torch.roll(x_freq, shifts=n1+n2, dims=1).conj()
+            features.append((A + A.roll(1, dims=-1)) * torch.roll(x_freq, shifts=n2, dims=1))
+    
+        E = torch.stack(features, dim=-1) # [batch, L,  Nmodes, L^2]
+        delta = self.fc(E).squeeze(-1)
+        return x_freq + delta * P[:,None,None]
 
-        d_num = 1 if d_share else self.step
-        n_num = 1 if n_share else self.step
 
-        beta2 = (
-            get_beta2(self.D, self.Fc) / 1e3
-        )  # Second-order dispersion coefficient [s^2/m]
-        beta1 = (
-            get_beta1(self.D, self.Fc, self.Fi) / 1e3
-        )  # First-order dispersion coefficient [s/m]
-        Dkernel_init = dispersion_kernel(
-            -self.dz, self.dtaps, Fs, beta2, beta1, domain="time"
-        ).to(torch.complex64)
-
-        self.Dkernel_real = nn.ParameterList(
-            [
-                nn.Parameter(Dkernel_init.real, requires_grad=d_train)
-                for _ in range(d_num)
-            ]
-        )
-        self.Dkernel_imag = nn.ParameterList(
-            [
-                nn.Parameter(Dkernel_init.imag, requires_grad=d_train)
-                for _ in range(d_num)
-            ]
-        )
-        self.Nkernel = nn.ParameterList(
-            [
-                nn.Parameter(
-                    torch.zeros(
-                        self.Nmodes, self.Nmodes, self.ntaps, dtype=torch.float32
-                    )
-                )
-                for _ in range(n_num)
-            ]
-        )  # Nonlinear kernel [Nmodes, Nmodes, ntaps]
 
     def forward(self, signal: TorchSignal, task_info: torch.Tensor) -> TorchSignal:
         """
@@ -115,42 +103,27 @@ class FDBP(nn.Module):
             TorchSignal with val shape [B, L - C, Nmodes], where C = steps * (dtaps - 1 + ntaps - 1).
         """
         assert signal.val.dtype == torch.complex64, "Input signal must be complex type."
-        x = signal.val  # [batch, L*sps, Nmodes]
+        x = signal.val                 # [batch, L*sps, Nmodes]
+        x_freq = torch.fft.fft(x, dim=1)  # [batch, L*sps, Nmodes]
         t = copy.deepcopy(signal.t)  # [start, stop, sps]
-        batch = x.shape[0]
-
         P = 1e-3 * 10 ** (task_info[:, 0] / 10) / self.Nmodes  # Power [W]
+        Dkernel = dispersion_kernel(-self.dz, x.shape[1], self.Fs, self.beta2, self.beta1, domain="freq").to(torch.complex64) 
+        Dkernel = Dkernel.to(x.device)
 
         for i in range(self.step):
             # Linear step
-            Dk = self.Dkernel_real[min(i, len(self.Dkernel_real) - 1)].expand(
-                x.shape[0], self.dtaps
-            ) + 1j * self.Dkernel_imag[min(i, len(self.Dkernel_imag) - 1)].expand(
-                x.shape[0], self.dtaps
-            )
-            x = dconv(x, Dk, stride=1)  # [batch, L*sps - dtaps + 1, Nmodes]
-            t.conv1d_t(self.dtaps, stride=1)
-
+            x_freq = x_freq * Dkernel[...,None] 
             # Nonlinear step
-            start, stop = t.start, t.stop
-            t.conv1d_t(self.ntaps, stride=1)
-            phi = nconv(
-                torch.abs(x) ** 2,
-                self.Nkernel[min(i, len(self.Nkernel) - 1)].expand(
-                    x.shape[0], self.Nmodes, self.Nmodes, self.ntaps
-                ),
-                1,
-            )
-            x = x[:, t.start - start : t.stop - stop + x.shape[1]] * torch.exp(
-                1j * phi * self.gamma * P[:, None, None] * self.dz
-            )  # [batch, L*sps - dtaps + 1, Nmodes]
-
+            x_freq = self.nonlinear_step(x_freq, P)
+        
+        x = torch.fft.ifft(x_freq, dim=1)[:,(self.overlaps//2):x.shape[1]-(self.overlaps//2),:]
+        t = TorchTime(self.overlaps//2, -(self.overlaps//2), t.sps)
         return TorchSignal(x, t)
 
 
 if __name__ == "__main__":
     device = 'cuda:0'
-    net = FDBP(2, 5, 1001, 101)
+    net = FreqDBP(2, 5, M=41, rho=1)
     signal = TorchSignal(
         val=torch.randn(1, 10000, 2).to(torch.complex64), t=TorchTime(0, 0, 2)
     )
@@ -159,11 +132,10 @@ if __name__ == "__main__":
     signal = signal.to(device)
     task_info = task_info.to(device)
     net = net.to(device)
-    
+
     import time 
     t0 = time.time()
     y = net(signal, task_info)
     t1 = time.time()
     print('time:', t1 - t0)
-
     print(y)

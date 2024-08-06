@@ -58,6 +58,7 @@ class EqFrePBC(nn.Module):
         delta = self.fc(E).squeeze(-1)
         delta = torch.fft.ifft(delta, dim=1) 
 
+        # x0 + delta * P[:,None,None] = ifft(x + delta * P[:,None,None])
         return (x0 + delta * P[:,None,None])[:,(self.overlaps//2):L-(self.overlaps//2),:]
 
                 
