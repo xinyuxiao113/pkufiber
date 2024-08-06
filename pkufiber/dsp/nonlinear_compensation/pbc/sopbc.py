@@ -68,6 +68,10 @@ class EqSoPBC(nn.Module):
         return self.pbc(x, task_info)  + E2 * P[:, None]**2
          # [batch, Nmodes]
 
+    def rmps(self) -> int:
+
+        return self.pbc.rmps() + self.features2.rmps() + 4*self.features2.hdim 
+    
 if __name__ == '__main__':
     M = 41
     Nmodes = 2

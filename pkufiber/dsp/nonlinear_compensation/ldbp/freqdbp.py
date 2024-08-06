@@ -119,6 +119,10 @@ class FreqDBP(nn.Module):
         x = torch.fft.ifft(x_freq, dim=1)[:,(self.overlaps//2):x.shape[1]-(self.overlaps//2),:]
         t = TorchTime(self.overlaps//2, -(self.overlaps//2), t.sps)
         return TorchSignal(x, t)
+    
+    def rmps(self, strides) -> int:
+        from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
+        return 2*rmps_fft(strides+self.overlaps) + self.steps*(4*1 + 12*len(self.index))
 
 
 if __name__ == "__main__":

@@ -83,6 +83,7 @@ class TripletFeatures(nn.Module):
             return idx1 + idx2 + idx3
         else:
             raise ValueError("Invalid index type. please choose from ['full','reduce-1', 'reduce-2','FWM']")
+            
 
     def get_index(self):
         """
@@ -139,6 +140,33 @@ class TripletFeatures(nn.Module):
             return torch.cat([E1, E2, E3], dim=-1)  # [batch, Nmodes, len(S)]
         else:
             raise ValueError("Invalid index type. please choose from ['full','reduce-1', 'reduce-2','FWM']")
+        
+    def rmps(self) -> int:
+        '''
+        real multiplications per sample. 
+            4x: 2 for real and 2 for imag.
+            2x: 2 multiply operator for each triplet.
+        '''
+        if self.index_type == IndexType.full:
+            return 4*2*len(self.index)
+        elif self.index_type == IndexType.reduce_1:
+            idx1 = [(m, n) for m, n in self.index if m == n]
+            idx2 = [(m, n) for m, n in self.index if m != n]
+            return 4*2*(len(idx1)*1+ len(idx2)*2)
+        elif self.index_type == IndexType.reduce_2:
+            idx1 = [(m, n) for m, n in self.index if m == 0 and n == 0]
+            idx2 = [(m, n) for m, n in self.index if m == n and n != 0]
+            idx3 = [(m, n) for m, n in self.index if m != n and m+n == 0]
+            idx4 = [(m, n) for m, n in self.index if m != n and m+n != 0]
+            return 4*2*(len(idx1)*1+ len(idx2)*2 + len(idx3)*2 + len(idx4)*4)
+        elif self.index_type == IndexType.FWM:
+            idx1 = [(m, n) for m, n in self.index if m ==n]
+            idx2 = [(m, n) for m, n in self.index if m != n and m+n == 0]
+            idx3 = [(m, n) for m, n in self.index if m != n and m+n != 0]
+            return 4*2*(len(idx1)*1+ len(idx2)*2 + len(idx3)*4)
+        else:
+            raise ValueError("Invalid index type. please choose from ['full','reduce-1', 'reduce-2','FWM']")
+    
 
 
 
@@ -209,6 +237,14 @@ class SoFeatures(nn.Module):
             term2 = torch.sum(E[:, p+k]*E[:, p-k], dim=-1) # [batch]
             Es.append(E1.conj() * term2[:,None]) 
         return torch.stack(Es, dim=-1)
+    
+    def rmps(self) -> int:
+        '''
+        real multiplications per sample.
+        4x: 2 for real and 2 for imag.
+        4x: 4 multiply operator for each feature.
+        '''
+        return 4*len(self.index)*(2 + 2 + 2)
             
 
 

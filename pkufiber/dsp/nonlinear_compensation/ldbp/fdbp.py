@@ -146,8 +146,15 @@ class FDBP(nn.Module):
             )  # [batch, L*sps - dtaps + 1, Nmodes]
 
         return TorchSignal(x, t)
-
-
+    
+    def rmps(self) -> int:
+        """
+        Return the number of parameters in the model.
+        """
+        from pkufiber.dsp.nonlinear_compensation.rmps import rmps_fdbp
+        return rmps_fdbp(self.dtaps, self.ntaps, self.step)
+    
+    
 if __name__ == "__main__":
     device = 'cuda:0'
     net = FDBP(2, 5, 1001, 101)

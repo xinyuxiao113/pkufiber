@@ -30,6 +30,7 @@ class EqPBC(nn.Module):
         super(EqPBC, self).__init__()
         assert M % 2 == 1, "M must be odd."
         self.M = M
+        self.rho = rho
         self.overlaps = M - 1
         self.features = TripletFeatures(M, rho, index_type, decision)
         self.pol_num = 1 if pol_share else 2
@@ -39,6 +40,7 @@ class EqPBC(nn.Module):
                 for _ in range(self.pol_num)
             ]
         )
+
 
     def forward(self, x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:
         """
@@ -65,6 +67,15 @@ class EqPBC(nn.Module):
         ]  # [batch, 1]
         E = torch.cat(E, dim=-1)  # [batch, Nmodes]
         return x[:, self.features.M // 2, :] + E * P[:, None]  # [batch, Nmodes]
+
+
+    def rmps(self) -> int:
+        '''
+        real mulitplication times per sample.
+        x 4: 4 real multiplications in each complex multiplication.
+        '''
+        # return TripletFeatures(self.M, self.rho, 'full').hdim * 3 * 4
+        return self.features.rmps() + self.features.hdim*4
 
 
 class EqAMPBC(nn.Module):
@@ -147,7 +158,7 @@ class EqAMPBC(nn.Module):
         P = get_power(task_info, x.shape[-1], x.device)
         x = x * torch.sqrt(P[:, None, None])
 
-        # IFWM term
+        # IFWM term  
         features = self.features.nonlinear_features(x)  # [batch, Nmodes, hdim]
         E = [
             self.fwm_nn[min(self.fwm_modes - 1, i)](features[..., i, :])
@@ -167,6 +178,17 @@ class EqAMPBC(nn.Module):
         E = E + x[:, self.M // 2, :] * torch.exp(1j * phi)  # [batch, Nmodes]
         E = E / torch.sqrt(P[:, None])  # [batch, Nmodes]
         return E
+    
+    def rmps(self) -> int:
+        '''
+        real mulitplication times per sample.
+        hdim x 3 x 4
+            x 3: cost of construct nonlinear features.
+            x 4: 4 real multiplications in each complex multiplication.
+        SEE:  Deep Learning-Aided Perturbation Model-Based Fiber Nonlinearity Compensation 2023.
+        '''
+        #                           FWM                      + ICIXPM   +  CIXPM   + SPM
+        return (self.features.rmps() + 4*self.features.hdim) + 8*self.M + 4*self.M + 2*1 + 12 
 
 
 class EqPBCstep(nn.Module):
@@ -203,6 +225,15 @@ class EqPBCstep(nn.Module):
         x = x.reshape(batch, -1, x.shape[-1])  # [batch, L - M + 1, Nmodes]
         return x
 
+    def rmps(self) -> int:
+        '''
+        real mulitplication times per sample.
+        hdim x 3 x 4
+            x 3: cost of construct nonlinear features.
+            x 4: 4 real multiplications in each complex multiplication.
+        SEE:  Deep Learning-Aided Perturbation Model-Based Fiber Nonlinearity Compensation 2023.
+        '''
+        return self.PBC.rmps()
 
 class EqAMPBCstep(nn.Module):
     '''
@@ -238,6 +269,8 @@ class EqAMPBCstep(nn.Module):
         x = x.reshape(batch, -1, x.shape[-1])  # [batch, L - M + 1, Nmodes]
         return x
 
+    def rmps(self) -> int:
+        return self.PBC.rmps()
 
 class MultiStepPBC(nn.Module):
     '''
@@ -269,6 +302,9 @@ class MultiStepPBC(nn.Module):
             x = self.PBC_list[i](x, task_info)
         return x
 
+    def rmps(self) -> int:
+        return sum([net.rmps() for net in self.PBC_list])
+    
 
 class MultiStepAMPBC(nn.Module):
     '''
@@ -297,6 +333,9 @@ class MultiStepAMPBC(nn.Module):
         for i in range(self.steps):
             x = self.PBC_list[i](x, task_info)
         return x
+    
+    def rmps(self) -> int:
+        return sum([net.rmps() for net in self.PBC_list])
 
 
 if __name__ == "__main__":

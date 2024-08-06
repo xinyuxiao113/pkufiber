@@ -35,6 +35,7 @@ class EqPBCNN(nn.Module):
         self.features = TripletFeatures(M, rho, index_type, decision)
         self.pol_num = 1 if pol_share else 2
         self.overlaps = M - 1
+        self.hidden_sizes = hidden_sizes   
 
 
         activation = act_dict[act]
@@ -77,6 +78,10 @@ class EqPBCNN(nn.Module):
         ]  # [batch, 1]
         E = torch.cat(E, dim=-1)  # [batch, Nmodes]
         return x[:, self.features.M // 2, :] + E * P[:, None]  # [batch, Nmodes]
+
+    def rmps(self) -> int:
+        nn_cmps =  self.features.hdim*self.hidden_sizes[0] + self.hidden_sizes[0]*self.hidden_sizes[1] + self.hidden_sizes[1]*1
+        return self.features.rmps() + 4 * nn_cmps
 
 
 if __name__ == "__main__":

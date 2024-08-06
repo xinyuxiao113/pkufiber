@@ -187,6 +187,11 @@ class MetaDBP(nn.Module):
             )
 
         return TorchSignal(x, t)
+    
+    def rmps(self) -> int:
+        from pkufiber.dsp.nonlinear_compensation.rmps import rmps_fdbp
+        return rmps_fdbp(self.dtaps, self.ntaps, self.step)
+
 
 
 if __name__ == "__main__":

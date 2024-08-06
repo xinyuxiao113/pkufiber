@@ -61,6 +61,12 @@ class EqFrePBC(nn.Module):
         # x0 + delta * P[:,None,None] = ifft(x + delta * P[:,None,None])
         return (x0 + delta * P[:,None,None])[:,(self.overlaps//2):L-(self.overlaps//2),:]
 
+    def rmps(self, strides=-1) -> int:
+        from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
+        if strides == -1: strides = self.overlaps + 1 
+        FFT_size = strides + self.overlaps
+        return (4*len(self.index)*3*FFT_size + rmps_fft(FFT_size)*2)/strides
+
                 
 if __name__ == "__main__":
     M = 41
