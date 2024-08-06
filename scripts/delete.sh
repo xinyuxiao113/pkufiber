@@ -1,3 +1,0 @@
-EXPERIMENT_NAME=$1
-
-rm -rf experiments/$EXPERIMENT_NAME
