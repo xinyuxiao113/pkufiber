@@ -21,7 +21,7 @@ class EqFrePBC(nn.Module):
     pol_share: bool, default=False, whether the two polarizations share the same filter.
 
     '''
-    def __init__(self, M: int = 41, overlaps: int = 40, rho: float = -1):
+    def __init__(self, M: int = 41, rho: float = -1, overlaps: int = 40, strides: int = -1):
         assert overlaps % 2 == 0 and M % 2 == 1, "overlaps should be even and M should be odd."
         super(EqFrePBC, self).__init__()
         self.M = M
@@ -29,6 +29,7 @@ class EqFrePBC(nn.Module):
         self.index = self.get_index()
         self.fc = ComplexLinear(len(self.index), 1)
         self.overlaps = overlaps
+        self.strides = strides
 
     def get_index(self):
         S = []
@@ -63,7 +64,9 @@ class EqFrePBC(nn.Module):
 
     def rmps(self, strides=-1) -> int:
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
-        if strides == -1: strides = self.overlaps + 1 
+        if strides == -1: strides = self.strides
+        if strides == -1: strides = self.overlaps + 1
+
         FFT_size = strides + self.overlaps
         return (4*len(self.index)*3*FFT_size + rmps_fft(FFT_size)*2)/strides
 

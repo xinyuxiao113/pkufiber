@@ -6,3 +6,4 @@
 
 # 0807
 1. Add test_eq.py, Add test_ldbp.py
+2. Add load_baselines.py to visualize.py.
