@@ -22,6 +22,8 @@ class EqAMPBCaddNN(nn.Module):
             - x[:, x.shape[1] // 2, :]
         )
     
+    def rmps(self) -> int:
+        return self.pbc.rmps() + self.nn.rmps()
 
 class EqAMPBCaddFNO(nn.Module):
     def __init__(self, pbc_info, nn_info):

@@ -31,6 +31,9 @@ class EqCNNBiLSTM(nn.Module):
         self.overlaps = M - 1
         self.res_net = res_net
         self.Nmodes = Nmodes
+        self.channels = channels
+        self.kernel_size = kernel_size  
+        self.hidden_size = hidden_size  
 
         self.conv1d = nn.Conv1d(
             in_channels=2 * Nmodes, 
@@ -85,3 +88,15 @@ class EqCNNBiLSTM(nn.Module):
 
         x = x / torch.sqrt(P[:, None])  # [batch, Nmodes]
         return x
+    
+    def rmps(self) -> int:
+        '''
+        Performance versus Complexity Study of Neural Network Equalizers in Coherent Optical Systems
+        '''
+        ni = 4
+        nf = self.channels
+        nk = self.kernel_size
+        ns = self.M
+        nh = self.hidden_size
+        no = 2
+        return ni*nf*nk*(ns-nk+1) + (ns - nk + 1)*2*nh*(4*nf+4*nh+3+no)

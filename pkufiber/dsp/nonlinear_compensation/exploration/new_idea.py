@@ -24,6 +24,11 @@ class EqAMPBCaddConv(nn.Module):
         c = x.shape[1] // 2
         return (self.pbc(x[:, c - self.pbc.M // 2 : c + self.pbc.M // 2 + 1, :], task_info) 
                 + self.nn(x.transpose(1,2)).squeeze() )
+    
+
+    def rmps(self) -> int:
+        from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc
+        return self.pbc.rmps() + rmps_edc(self.M)*2
 
 
 class EqSoNN(nn.Module):
@@ -45,6 +50,10 @@ class EqSoNN(nn.Module):
         A = torch.cat([self.f1(fo), self.f1(fo.flip(dims=(1,)))], dim=-1)      # [batch, hdim, Nmodes]
         B = torch.cat([self.f2(xt), self.f2(xt.flip(dims=(1,)))], dim=-1)      # [batch, hdim, Nmodes]
         return self.pbc(x, task_info) + 1e-4/np.sqrt(self.hdim) * torch.sum(A*B*B.conj() + A.conj()*B*B, dim=1)*P[:,None]**2
+    
+    def rmps(self) -> int:
+        raise NotImplementedError
+        # return self.pbc.rmps() + self.features.rmps() + 2*self.hdim
 
 if __name__ == "__main__":
     print('hello')

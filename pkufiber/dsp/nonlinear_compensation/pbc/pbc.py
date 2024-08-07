@@ -187,8 +187,9 @@ class EqAMPBC(nn.Module):
             x 4: 4 real multiplications in each complex multiplication.
         SEE:  Deep Learning-Aided Perturbation Model-Based Fiber Nonlinearity Compensation 2023.
         '''
-        #                           FWM                      + ICIXPM   +  CIXPM   + SPM
-        return (self.features.rmps() + 4*self.features.hdim) + 8*self.M + 4*self.M + 2*1 + 12 
+        from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
+        #                           FWM                             + ICIXPM         +  CIXPM          + SPM
+        return (self.features.rmps() + 4*self.features.hdim) + 2*rmps_edc(self.M) + rmps_edc(self.M) + 2*1 + 12 
 
 
 class EqPBCstep(nn.Module):

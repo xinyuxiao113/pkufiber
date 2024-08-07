@@ -17,6 +17,7 @@ class EqBiLSTM(nn.Module):
         super(EqBiLSTM, self).__init__()
         self.M = M
         self.overlaps = M - 1
+        self.hidden_size = hidden_size 
         self.res_net = res_net
         self.Nmodes = Nmodes
         self.lstm = nn.LSTM(
@@ -48,3 +49,13 @@ class EqBiLSTM(nn.Module):
             x = x + x0
         x = x / torch.sqrt(P[:, None])  # [batch, Nmodes]
         return x
+
+    def rmps(self) -> int:
+        '''
+        Performance versus Complexity Study of Neural Network Equalizers in Coherent Optical Systems
+        '''
+        ns = self.M 
+        nh = self.hidden_size
+        ni = 4
+        no = 2
+        return 2*ns*nh*(4*ni + 4*nh + 3 + no)

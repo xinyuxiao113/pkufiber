@@ -58,3 +58,15 @@ class EqMLP(nn.Module):
             x = x + x0
         x = x / torch.sqrt(P[:, None])  # [batch, Nmodes]
         return x
+    
+    def rmps(self) -> int:
+        '''
+        Performance versus Complexity Study of Neural Network Equalizers in Coherent Optical Systems
+        '''
+        ns = self.M 
+        ni = 4
+        n1 = self.widths[0]
+        n2 = self.widths[1]
+        n3 = self.widths[2]
+        no = 2
+        return ns*ni*n1 + n1*n2 + n2*n3 + n3*no
