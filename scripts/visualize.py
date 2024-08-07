@@ -48,6 +48,3 @@ def load_experiment(path):
 
 
     return data
-
-log_directory = "experiments/80G_3ch_frepbc_M41_rho1_ol40_strides41_p1.8"
-data = load_experiment(log_directory)
