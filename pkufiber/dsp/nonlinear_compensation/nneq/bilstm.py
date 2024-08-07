@@ -16,6 +16,7 @@ class EqBiLSTM(nn.Module):
     def __init__(self, M: int=41, Nmodes=2, hidden_size=226, res_net=True):
         super(EqBiLSTM, self).__init__()
         self.M = M
+        self.overlaps = M - 1
         self.res_net = res_net
         self.Nmodes = Nmodes
         self.lstm = nn.LSTM(

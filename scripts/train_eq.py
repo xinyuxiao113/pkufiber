@@ -46,6 +46,7 @@ def load_param(module, path='experiments/ampbc_M401/models/29.pth'):
     print(f'Model {module} loaded params from:', path, flush=True)
 
 
+
 def check_data_config(config, overlaps:int=0):
     '''
     define the window size for training and testing data.
@@ -101,9 +102,13 @@ def test_model(net, dataloader, device='cuda:0'):
     '''
     net: nn.Module
     dataloader: torch.utils.data.DataLoader
-    '''
+    ''' 
     net.eval()
     mse_value, power_value, ber_value, N = 0,0,0, len(dataloader)
+
+    Nbatch = 0 
+    ys = []
+    xs = []
 
     with torch.no_grad():
         for Rx, Tx, info in dataloader:
@@ -112,17 +117,24 @@ def test_model(net, dataloader, device='cuda:0'):
             assert PBC.ndim == Tx.ndim
             if Tx.ndim == 3:
                 Tx = Tx[:, net.overlaps//2:Tx.shape[1]-net.overlaps//2, :]
-            power_value += mse(Tx, 0).item() 
-            mse_value += mse(PBC, Tx).item()
-            ber_value += np.mean(ber(PBC, Tx)['BER'])
+            power_value += mse(Tx, 0).item()*Tx.shape[0]
+            mse_value += mse(PBC, Tx).item()*Tx.shape[0]
+            ber_value += np.mean(ber(PBC, Tx)['BER'])*Tx.shape[0]
+            Nbatch += Tx.shape[0]
 
+            ys.append(PBC.cpu().detach())
+            xs.append(Tx.cpu().detach())
+    power_value = power_value/Nbatch
+    mse_value = mse_value/Nbatch
+    ber_value = ber_value/Nbatch
     net.train()
-    return {'MSE':mse_value/N, 'SNR': 10*np.log10(power_value/mse_value), 'BER':ber_value/N, 'Qsq': qfactor(ber_value/N)}
+
+    return {'MSE':mse_value, 'SNR': 10*np.log10(power_value/mse_value), 'BER':ber_value, 'Qsq': qfactor(ber_value)}, (torch.cat(ys, dim=0), torch.cat(xs, dim=0))
 
 
 
 def train_model(writer, need_weight, loss_func, net, train_loader, test_loader, optimizer, scheduler, epochs, model_path, save_model=True, save_interval=1, device='cuda:0', model_info={}):
-    metric = test_model(net, test_loader)
+    metric, result = test_model(net, test_loader)
     print('Test BER: %.5f, Qsq: %.5f, MSE: %.5f' % (metric['BER'], metric['Qsq'], metric['MSE']), flush=True)
     write_log(writer, 0, 0, metric)
 
@@ -155,7 +167,7 @@ def train_model(writer, need_weight, loss_func, net, train_loader, test_loader, 
             writer.add_scalar('Loss/train_batch', loss.item(), epoch*N+i)
         t1 = time.time()
         scheduler.step()
-        metric = test_model(net, test_loader)
+        metric, _ = test_model(net, test_loader)
 
         print('Epoch: %d, Loss: %.5f, time: %.5f' % (epoch, train_loss/N, t1-t0), flush=True)
         print('Test BER: %.5f, Qsq: %.5f, MSE: %.5f' % (metric['BER'], metric['Qsq'], metric['MSE']), flush=True)
@@ -238,9 +250,9 @@ def main():
     test_data = MixFiberDataset(**config['test_data'])
     # train_data = OldData(mode='train',window_size=41, num_symb=4000000, truncate=10000)
     # test_data = OldData(mode='test', window_size=41, num_symb=100000, truncate=10000)
-    train_loader = DataLoader(train_data, batch_size=config['batch_size'], shuffle=True, drop_last=True)
+    train_loader = DataLoader(train_data, batch_size=config['batch_size'], shuffle=True, drop_last=False)
     if 'test_batch_size' not in config.keys(): config['test_batch_size'] = config['batch_size']
-    test_loader = DataLoader(test_data, batch_size=config['test_batch_size'], shuffle=False, drop_last=True)
+    test_loader = DataLoader(test_data, batch_size=config['test_batch_size'], shuffle=False, drop_last=False)
     print('Train Data number:',len(train_data), 'length of train_loader:', len(train_loader))
     print('Test Data number:',len(test_data), 'length of test_loader:', len(test_loader))
 

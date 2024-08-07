@@ -21,6 +21,8 @@ class EqMLP(nn.Module):
     def __init__(self, M: int, Nmodes=2, widths=[149, 132, 596], res_net=True):
         super(EqMLP, self).__init__()
         self.M = M
+        self.overlaps = M - 1
+        
         self.res_net = res_net
         self.Nmodes = Nmodes
         self.flatten = nn.Flatten()

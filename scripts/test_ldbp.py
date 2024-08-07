@@ -10,7 +10,7 @@ import re
 import argparse
 import torch 
 import numpy as np
-from scripts.train_eq import init_model, DataLoader, test_model
+from scripts.train_ldbp import init_model, DataLoader, test_model
 
 
 parser = argparse.ArgumentParser()
@@ -31,8 +31,8 @@ def load_latest_model(path):
     models = os.listdir(path + '/models')
     n = find_max_number(models)
     with open(path + '/config.yaml') as f: config = yaml.load(f, Loader=yaml.FullLoader)
-    model = init_model(config['model_name'], config['model_info'])
-    param_dict = torch.load(path + f'/models/{n}.pth', map_location='cpu')['model_param']
+    model = init_model(config['dbp_name'], config['dbp_info'])
+    param_dict = torch.load(path + f'/models/{n}.pth', map_location='cpu')['dbp_param']
     model.load_state_dict(param_dict) 
     print(f'model{n}.pth loaded.')
     return model
@@ -44,8 +44,8 @@ model = load_latest_model(args.path)
 model = model.to(data_cfg['device'])
 
 strides = model_cfg['test_data']['strides'] 
-Tx_window = True if model_cfg['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep'] else False
-window_size = model.overlaps + strides
+Tx_window = model_cfg['test_data']['Tx_window'] 
+window_size = model.overlaps + strides + (data_cfg['taps'] - 1)//2
 
 print(f"strides = {strides}, window_size = {window_size}, Tx_window = {Tx_window}")
 
@@ -69,13 +69,5 @@ print('Result are stored in:', args.path + '/results')
 os.system(f'cp {args.test_config} {args.path}/results/test.yaml')
 np.save(args.path + '/results/qfactor.npy', Q) 
 np.save(args.path + '/results/power.npy', data_cfg['Pch'])
-
-# plot Q factor - power curve
-
-
-# plot constellation
-
-
-# plot eye diagram
 
 

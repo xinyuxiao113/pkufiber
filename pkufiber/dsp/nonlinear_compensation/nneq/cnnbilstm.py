@@ -28,6 +28,7 @@ class EqCNNBiLSTM(nn.Module):
     ):
         super(EqCNNBiLSTM, self).__init__()
         self.M = M
+        self.overlaps = M - 1
         self.res_net = res_net
         self.Nmodes = Nmodes
 

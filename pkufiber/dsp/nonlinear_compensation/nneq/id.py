@@ -17,6 +17,7 @@ class EqID(nn.Module):
     def __init__(self, M: int, Nmodes=2):
         super(EqID, self).__init__()
         self.M = M
+        self.overlaps = M - 1
 
     def forward(self, x, task_info):
 

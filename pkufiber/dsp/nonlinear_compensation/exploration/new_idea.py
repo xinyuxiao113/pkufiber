@@ -29,6 +29,8 @@ class EqAMPBCaddConv(nn.Module):
 class EqSoNN(nn.Module):
     def __init__(self, M: int=41, rho: float=4.0, hdim:int=10, Nmodes=2):
         super(EqSoNN, self).__init__()
+        self.M = M 
+        self.overlaps = M - 1  
         self.pbc = EqAMPBC(M, rho)
         self.features = TripletFeatures(M, rho)
         self.hdim = hdim

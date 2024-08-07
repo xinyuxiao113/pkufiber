@@ -24,12 +24,12 @@ class EqSoPBC(nn.Module):
     def __init__(self, Nmodes:int=2, M2:int=11, rho2:float=1.0,  pol_share: bool=False, decision=False, fo_pbc:str='EqAMPBC', fo_info:dict={}):
         super(EqSoPBC, self).__init__()
         self.M = fo_info['M']
+        self.overlaps = self.M - 1
         self.pbc = getattr(pbc, fo_pbc)(**fo_info)
         self.M2 = M2
         assert self.M >= self.M2, "M should be larger than M2."
         self.features2 = SoFeatures(M2, Nmodes, rho2, decision)
         self.pol_num = 1 if pol_share else 2
-        self.overlaps = self.M - 1
         self.nn = nn.ModuleList(
             [
                 ComplexLinear(self.features2.hdim, 1, bias=False)

@@ -28,7 +28,7 @@ def write_log(writer, epoch, train_loss, metric):
     writer.add_scalar('Metric/Qsq', metric['Qsq'], epoch)
     
 
-def load_model(model_name, model_info):
+def init_model(model_name, model_info):
     '''
     Load model.
         model_name: model name.
@@ -183,7 +183,7 @@ def main():
     print('Training Start at time: ', time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
     # load model
-    dbp = load_model(config['dbp_name'], config['dbp_info'])
+    dbp = init_model(config['dbp_name'], config['dbp_info'])
     conv = downsamp(taps=64, Nmodes=config['dbp_info']['Nmodes'], sps=2, init='zeros').to(config['device'])
     dbp = dbp.to(config['device'])
     conv = conv.to(config['device'])
@@ -196,9 +196,9 @@ def main():
     config['train_data']['window_size'] = config['train_data']['strides'] +  dbp.overlaps + conv.overlaps
     config['test_data']['window_size'] = config['test_data']['strides'] +  dbp.overlaps + conv.overlaps
     train_data = MixFiberDataset(**config['train_data'])
-    train_loader = DataLoader(train_data, batch_size=config['batch_size'], shuffle=True, drop_last=True)
+    train_loader = DataLoader(train_data, batch_size=config['batch_size'], shuffle=True, drop_last=False)
     test_data = MixFiberDataset(**config['test_data'])
-    test_loader = DataLoader(test_data, batch_size=1, shuffle=False, drop_last=True)
+    test_loader = DataLoader(test_data, batch_size=1, shuffle=False, drop_last=False)
  
     # train
     model_path = args.model_path

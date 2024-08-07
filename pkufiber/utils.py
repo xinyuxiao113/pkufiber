@@ -62,13 +62,13 @@ def show_symb(
     Nmodes = sig.shape[-1]
     symb_set = np.unique(symb)
 
-    fig, ax = plt.subplots(1, 2, figsize=figsize)
+    fig, ax = plt.subplots(1, 2, figsize=figsize, dpi=200)
     fig.suptitle(title)
 
     for p in range(Nmodes):
         for sym in symb_set:
 
             z = sig[..., p][symb[..., p] == sym]
-            ax[p].scatter(z.real, z.imag, s=s)
+            ax[p].scatter(z.real, z.imag, s=s, marker='.')  # type: ignore
 
     return ax

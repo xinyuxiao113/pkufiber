@@ -10,6 +10,8 @@ class EqAMPBCaddNN(nn.Module):
         super(EqAMPBCaddNN, self).__init__()
         self.pbc = EqAMPBC(**pbc_info)
         self.nn = EqCNNBiLSTM(**nn_info)
+        self.M = max(self.pbc.M, self.nn.M)
+        self.overlaps = self.M - 1
 
     def forward(self, x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:
         c = x.shape[1] // 2
@@ -26,6 +28,8 @@ class EqAMPBCaddFNO(nn.Module):
         super(EqAMPBCaddFNO, self).__init__()
         self.pbc = EqAMPBC(**pbc_info)
         self.nn = EqFno(**nn_info)
+        self.M = max(self.pbc.M, self.nn.M)
+        self.overlaps = self.M - 1
 
     def forward(self, x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:
         c = x.shape[1] // 2
