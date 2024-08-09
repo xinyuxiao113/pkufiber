@@ -43,7 +43,7 @@ data_cfg = yaml.load(open(args.test_config), Loader=yaml.FullLoader)
 model = load_latest_model(args.path)
 model = model.to(data_cfg['device'])
 
-strides = model_cfg['test_data']['strides'] 
+strides = data_cfg['strides']
 Tx_window = model_cfg['test_data']['Tx_window'] 
 window_size = model.overlaps + strides + (data_cfg['taps'] - 1)//2
 

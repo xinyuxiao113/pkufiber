@@ -1,3 +1,9 @@
+'''
+Generate data for training and testing.
+
+Usage:
+    python -m scripts.data --config configs/data/base_test.yaml --path data/test.h5
+'''
 import pkufiber as pf 
 import argparse, yaml
 

@@ -1,12 +1,13 @@
-'''
-use this script to modify the value of a key in a yaml file. 
+"""
+Use this script to modify the value of a key in a YAML file.
 
 Usage:
     python modify_yaml.py config.yaml new_config.yaml modify_item_key new_value
+"""
 
-'''
 from ruamel.yaml import YAML
 import argparse
+import sys
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Modify a key in a YAML configuration file and save the result to a new file.")
@@ -35,17 +36,36 @@ def main():
     args = parse_args()
 
     # Load the input YAML file
-    config = load_yaml(args.input_path)
+    try:
+        config = load_yaml(args.input_path)
+    except FileNotFoundError:
+        print(f"Error: The file {args.input_path} does not exist.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error loading YAML file: {e}")
+        sys.exit(1)
 
     # Convert new_value to the appropriate type
-    new_value = YAML().load(args.new_value)
+    try:
+        new_value = YAML().load(args.new_value)
+    except Exception as e:
+        print(f"Error parsing new value: {e}")
+        sys.exit(1)
 
     # Modify the specified key in the YAML data
     keys = args.key.split('.')
-    set_nested_value(config, keys, new_value)
+    try:
+        set_nested_value(config, keys, new_value)
+    except KeyError as e:
+        print(f"Error: Key {e} not found in YAML file.")
+        sys.exit(1)
 
     # Save the modified YAML to the output file
-    save_yaml(config, args.output_path)
+    try:
+        save_yaml(config, args.output_path)
+    except Exception as e:
+        print(f"Error saving YAML file: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

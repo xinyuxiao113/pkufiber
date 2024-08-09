@@ -1,17 +1,30 @@
+#!/bin/bash
 
-start=1
-end=3
-step=0.1
+M_values=(41)
+rho_values=(1)
+config=configs/0801/frepbc.yaml
 
-value=$start
-while (( $(echo "$value <= $end" | bc -l) )); do
-    echo RKN:p=$value
-    value=$(echo "$value + $step" | bc)
+for M_value in "${M_values[@]}"; do
+    for rho_value in "${rho_values[@]}"; do
+        overlaps=$(echo "$M_value - 1" | bc)
+        strides=$(echo "$overlaps*4+1" | bc)
+        echo "Running experiment with M=$M_value, rho=$rho_value, overlaps=$overlaps, strides=$strides"
 
-    # define config file
-    #python -m scripts.modify_yaml configs/0801/frepbc_rkn.yaml configs/0801/frepbc_rkn.yaml p  $value
-    python -m scripts.modify_yaml configs/0801/ampbcstep_rkn.yaml configs/0801/ampbcstep_rkn.yaml p  $value
+        index=80G_3ch_frepbc_M"$M_value"_rho"$rho_value"_ol"$overlaps"_strides"$strides"
 
-    # run the experiment
-    ./scripts/train_eq.sh 80G_3ch_ampbcstep_M41_rho8_p$value configs/0801/ampbcstep_rkn.yaml
+        # modify the yaml file
+        python -m scripts.modify_yaml $config $config model_info.M $M_value
+        python -m scripts.modify_yaml $config $config model_info.rho $rho_value
+        python -m scripts.modify_yaml $config $config model_info.overlaps $overlaps
+        python -m scripts.modify_yaml $config $config model_info.strides $strides
+        python -m scripts.modify_yaml $config $config train_data.strides $strides
+        python -m scripts.modify_yaml $config $config test_data.strides $strides
+
+
+        # training
+        ./scripts/train_eq.sh $index $config
+
+        # testing
+        python -m scripts.test_eq --path experiments/$index --test_config configs/dsp/test_eq.yaml
+    done
 done

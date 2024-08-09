@@ -103,6 +103,7 @@ class PbcDBP(nn.Module):
             ]
         )
 
+
     def forward(self, signal: TorchSignal, task_info: torch.Tensor) -> TorchSignal:
         """
         Forward pass for DBP with hyper-network.

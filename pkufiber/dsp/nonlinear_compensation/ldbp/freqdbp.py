@@ -122,7 +122,7 @@ class FreqDBP(nn.Module):
     
     def rmps(self, strides) -> int:
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
-        return 2*rmps_fft(strides+self.overlaps) + self.steps*(4*1 + 12*len(self.index))
+        return 2*rmps_fft(strides+self.overlaps)/strides + self.step*(4*1 + 12*len(self.index))
 
 
 if __name__ == "__main__":

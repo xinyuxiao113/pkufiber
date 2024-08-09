@@ -95,6 +95,7 @@ class EqAMPBC(nn.Module):
         self.features = TripletFeatures(M, rho, index_type="FWM", decision=decision)
 
         self.C00 = nn.Parameter(torch.zeros(()), requires_grad=True)  # SPM coeff
+
         self.fwm_nn = nn.ModuleList(
             [
                 ComplexLinear(self.features.hdim, 1, bias=False)
@@ -159,12 +160,15 @@ class EqAMPBC(nn.Module):
         x = x * torch.sqrt(P[:, None, None])
 
         # IFWM term  
-        features = self.features.nonlinear_features(x)  # [batch, Nmodes, hdim]
-        E = [
-            self.fwm_nn[min(self.fwm_modes - 1, i)](features[..., i, :])
-            for i in range(x.shape[-1])
-        ]  # [batch, 1] x Nmodes
-        E = torch.cat(E, dim=-1)  # [batch, Nmodes]
+        if self.features.hdim > 0:
+            features = self.features.nonlinear_features(x)  # [batch, Nmodes, hdim]
+            ifwm = [
+                self.fwm_nn[min(self.fwm_modes - 1, i)](features[..., i, :])
+                for i in range(x.shape[-1])
+            ]  # [batch, 1] x Nmodes
+            ifwm = torch.cat(ifwm, dim=-1)  # [batch, Nmodes]
+        else: 
+            ifwm = 0
 
         # SPM + IXPM
         power = torch.abs(x) ** 2  # [B, M, Nmodes]
@@ -174,8 +178,7 @@ class EqAMPBC(nn.Module):
             + 2 * self.zcv_filter(self.xpm_conv1, ps)[:, 0, :]
         )  # [B, Nmodes]
 
-        E = E + self.IXIXPM(x)  # [batch, Nmodes]
-        E = E + x[:, self.M // 2, :] * torch.exp(1j * phi)  # [batch, Nmodes]
+        E = ifwm + self.IXIXPM(x) + x[:, self.M // 2, :] * torch.exp(1j * phi)  # [batch, Nmodes]
         E = E / torch.sqrt(P[:, None])  # [batch, Nmodes]
         return E
     

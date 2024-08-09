@@ -179,6 +179,7 @@ def main():
     args = parser.parse_args()
     with open(args.config, 'r') as f: config = yaml.load(f, Loader=yaml.FullLoader)
     writer = SummaryWriter(args.log_path)
+    for k,v in config.items(): writer.add_text(k, str(v))
     print('*****  Experitment: %s *****' % args.log_path)
     print('Training Start at time: ', time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
@@ -211,7 +212,5 @@ def main():
                 model_info=config['dbp_info'])
     
     print('Training Finished at time ', time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-    for k,v in config.items():
-        writer.add_text(k, str(v))
 
     writer.close()

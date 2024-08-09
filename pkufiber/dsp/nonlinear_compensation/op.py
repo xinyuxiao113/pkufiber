@@ -31,6 +31,8 @@ def triplets(E: torch.Tensor, m, n) -> torch.Tensor:
     Output:
         [batch, Nmodes] or [batch, len(m), Nmodes]
     '''
+    if type(m) != int and len(m) == 0:
+        return torch.zeros([E.shape[0],0, E.shape[-1]], device=E.device)
     return trip_op(E, E, E, m, n)
 
 
