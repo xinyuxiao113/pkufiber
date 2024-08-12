@@ -109,29 +109,15 @@ class TripletFeatures(nn.Module):
             return triplets(E, m, n).transpose(1,2)  # [batch,  Nmodes, len(S)]
         
         elif self.index_type == IndexType.reduce_1:
-            # m0, n0 = zip(*[(m, n) for m, n in self.index if m == n])
-            # m0, n0 = torch.tensor(m0, device=E.device), torch.tensor(n0, device=E.device)
             m0, n0 = self.get_m_n(lambda m,n: m == n, E.device)
-            # m1, n1 = zip(*[(m, n) for m, n in self.index if m != n])
-            # m1, n1 = torch.tensor(m1, device=E.device), torch.tensor(n1, device=E.device)
             m1, n1 = self.get_m_n(lambda m,n: m != n, E.device)
-
             E0 = triplets(E, m0, n0).transpose(1,2)                                       # [batch, Nmodes, len(m0)]
             E1 = triplets(E, m1, n1).transpose(1,2) + triplets(E, n1, m1).transpose(1,2)  # [batch, Nmodes, len(m1)]
             return torch.cat([E0, E1], dim=-1)  # [batch, Nmodes, len(S)]
         elif self.index_type == IndexType.reduce_2:
-
-            # m0, n0 = zip(*[(m, n) for m, n in self.index if m == 0 and n == 0])
-            # m0, n0 = torch.tensor(m0, device=E.device), torch.tensor(n0, device=E.device)
             m0,n0 = self.get_m_n(lambda m,n: m == 0 and n == 0, E.device)
-            # m1, n1 = zip(*[(m, n) for m, n in self.index if m == n and n != 0])
-            # m1, n1 = torch.tensor(m1, device=E.device), torch.tensor(n1, device=E.device)
             m1, n1 = self.get_m_n(lambda m,n: m == n and n != 0, E.device)
-            # m2, n2 = zip(*[(m, n) for m, n in self.index if m != n and m+n == 0])
-            # m2, n2 = torch.tensor(m2, device=E.device), torch.tensor(n2, device=E.device)
             m2, n2 = self.get_m_n(lambda m,n: m != n and m+n == 0, E.device)
-            # m3, n3 = zip(*[(m, n) for m, n in self.index if m != n and m+n != 0])
-            # m3, n3 = torch.tensor(m3, device=E.device), torch.tensor(n3, device=E.device)
             m3, n3 = self.get_m_n(lambda m,n: m != n and m+n != 0, E.device)
 
             E0 = triplets(E, m0, n0).transpose(1,2)  # [batch, Nmodes, len(m0)]
@@ -140,12 +126,6 @@ class TripletFeatures(nn.Module):
             E3 = triplets(E, m3, n3).transpose(1,2) + triplets(E, n3, m3).transpose(1,2)  +  triplets(E, -m3, -n3).transpose(1,2) + triplets(E, -n3, -m3).transpose(1,2)    # [batch, Nmodes, len(m3)]
             return torch.cat([E0, E1, E2, E3], dim=-1)  # [batch, Nmodes, len(S)]
         elif self.index_type == IndexType.FWM:
-            # m1, n1 = zip(*[(m, n) for m, n in self.index if m ==n])
-            # m1, n1 = torch.tensor(m1, device=E.device), torch.tensor(n1, device=E.device)
-            # m2, n2 = zip(*[(m, n) for m, n in self.index if m != n and m+n == 0])
-            # m2, n2 = torch.tensor(m2, device=E.device), torch.tensor(n2, device=E.device)
-            # m3, n3 = zip(*[(m, n) for m, n in self.index if m != n and m+n != 0])
-            # m3, n3 = torch.tensor(m3, device=E.device), torch.tensor(n3, device=E.device)
             m1, n1 = self.get_m_n(lambda m,n: m ==n, E.device)
             m2, n2 = self.get_m_n(lambda m,n: m != n and m+n == 0, E.device)
             m3, n3 = self.get_m_n(lambda m,n: m != n and m+n != 0, E.device)

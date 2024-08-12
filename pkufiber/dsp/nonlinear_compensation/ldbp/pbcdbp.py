@@ -136,7 +136,8 @@ class PbcDBP(nn.Module):
     
     def rmps(self) -> int:
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc
-        return self.step * (rmps_edc(self.dtaps) + self.pbc[0].rmps())
+        sps = 2
+        return sps * self.step * (rmps_edc(self.dtaps) + self.pbc[0].rmps())
 
 
 if __name__ == "__main__":
