@@ -45,7 +45,7 @@ if __name__ == "__main__":
     model = model.to(data_cfg['device'])
 
     strides = model_cfg['test_data']['strides'] 
-    Tx_window = True if model_cfg['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep'] else False
+    Tx_window = True if model_cfg['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep', 'EqFreqTimePBC', 'EqStftPBC'] else False
     window_size = model.overlaps + strides
 
     print(f"strides = {strides}, window_size = {window_size}, Tx_window = {Tx_window}")

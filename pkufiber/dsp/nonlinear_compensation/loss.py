@@ -61,3 +61,10 @@ def adaptive_ber_v6(predict, truth, epoch=0):
     error = predict - truth
     dis = torch.max(torch.abs(error.real), torch.abs(error.imag))
     return torch.mean(well(dis, mu))
+
+
+# def cross_entropy(predict, truth, epoch=0):
+#     '''
+#     predict, truth: [B, N, Nmodes],
+#     '''
+    

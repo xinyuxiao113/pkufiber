@@ -6,6 +6,8 @@ import numpy as np, torch, scipy.constants as const
 from functools import partial
 from torch.fft import fft, ifft, fftfreq, fftshift
 from typing import Union, Tuple
+import torch
+import torch.nn.functional as F
 
 
 def get_omega(Fs: Union[int, float, torch.Tensor], Nfft: int) -> torch.Tensor:
@@ -157,3 +159,66 @@ def circFilter(h: torch.Tensor, x: torch.Tensor, dim=0) -> torch.Tensor:
     h_ = circsum(h, x.shape[dim])
     h_ = torch.roll(h_, -k)
     return conv_circ(x, h_, dim=dim)
+
+
+
+
+def stft_on_dimension(signal, n_fft, hop_length, win_length, dim=-1):
+    """
+    对张量的指定维度进行 STFT，并自动处理填充问题。
+    :param signal: 输入信号张量（复数类型），形状可以是 [batch, ..., L]，L是指定维度的长度
+    :param n_fft: FFT 点数
+    :param hop_length: 窗口滑动步长
+    :param win_length: 窗口长度
+    :param dim: 指定要进行 STFT 的维度
+    :return: 计算后的 STFT 结果和填充的信号长度
+    """
+    original_shape = signal.shape
+    signal = signal.transpose(dim, -1)  # 将指定维度移到最后
+    batch_shape = signal.shape[:-1]  # 获取批量维度形状
+    L = signal.shape[-1]
+    
+    # 计算所需的填充长度
+    pad_amount = n_fft - hop_length  # 根据 hop_length 和 n_fft 的关系来决定填充
+    padded_signal = F.pad(signal, (0, pad_amount))  # 在信号末尾进行填充
+
+    # 计算STFT，首先将其他维度展平为2D张量
+    flattened_signal = padded_signal.reshape(-1, padded_signal.shape[-1])
+    # window_fun = torch.hamming_window(win_length, device=signal.device)
+    window_fun = torch.ones(win_length, device=signal.device)
+    stft_result = torch.stft(flattened_signal, n_fft=n_fft, hop_length=hop_length, win_length=win_length, return_complex=True, window=window_fun, center=False)
+
+    # 恢复批量维度
+    stft_result = stft_result.view(*batch_shape, *stft_result.shape[-2:])
+
+    return stft_result, padded_signal.shape[-1], original_shape, dim
+
+def istft_on_dimension(stft_result, original_length, n_fft, hop_length, win_length, original_shape, dim=-1):
+    """
+    对 STFT 结果进行逆变换，并裁剪到原始长度，同时处理指定维度。
+    :param stft_result: STFT 结果
+    :param original_length: 原始信号的长度
+    :param n_fft: FFT 点数
+    :param hop_length: 窗口滑动步长
+    :param win_length: 窗口长度
+    :param original_shape: 原始信号的形状
+    :param dim: 指定的 ISTFT 操作维度
+    :return: 逆变换后的信号，裁剪至原始长度
+    """
+    batch_shape = stft_result.shape[:-2]  # 获取批量维度形状
+    
+    # 将stft_result展平为2D张量
+    flattened_stft = stft_result.reshape(-1, stft_result.shape[-2], stft_result.shape[-1])
+    
+    # 进行逆STFT
+    # window_fun = torch.hamming_window(win_length, device=stft_result.device)
+    window_fun = torch.ones(win_length, device=stft_result.device)
+    reconstructed_signal = torch.istft(flattened_stft, n_fft=n_fft, hop_length=hop_length, win_length=win_length, length=original_length, return_complex=True, window=window_fun, center=False)
+
+    # 恢复批量维度并裁剪长度
+    reconstructed_signal = reconstructed_signal.view(*batch_shape, original_length)
+
+    # 将指定的维度移回原来的位置
+    reconstructed_signal = reconstructed_signal.transpose(dim, -1).reshape(original_shape)
+
+    return reconstructed_signal

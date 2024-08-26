@@ -10,12 +10,10 @@ from pkufiber.dsp.layers import ComplexLinear, ComplexConv1d
 from pkufiber.dsp.nonlinear_compensation.op import triplets, trip_op, get_power
 from pkufiber.dsp.nonlinear_compensation.pbc.features import TripletFeatures, IndexType
 from pkufiber.dsp.nonlinear_compensation.pbc.pbc import EqPBC
+from pkufiber.op import stft_on_dimension, istft_on_dimension
 
 
-
-
-
-class EqFrePBC(nn.Module):
+class EqStftPBC(nn.Module):
     '''
     PBC step.
     M: int, default=41, the length of the filter.
@@ -26,13 +24,16 @@ class EqFrePBC(nn.Module):
     '''
     def __init__(self, M: int = 41, rho: float = -1, overlaps: int = 40, strides: int = -1):
         assert overlaps % 2 == 0 and M % 2 == 1, "overlaps should be even and M should be odd."
-        super(EqFrePBC, self).__init__()
+        super(EqStftPBC, self).__init__()
         self.M = M
         self.rho = rho if rho > 0 else M/2
         self.index = self.get_index()
         self.fc = ComplexLinear(len(self.index), 1)
         self.overlaps = overlaps
         self.strides = strides
+        self.n_fft = self.overlaps + strides
+        self.hop_length = strides if strides > 0 else overlaps // 2  # 设置hop_length
+        
 
     def get_index(self):
         S = []
@@ -46,45 +47,44 @@ class EqFrePBC(nn.Module):
         """
         x: [batch, L, Nmodes]
         task_info: [batch, 4]
-        --> [batch, L - M + 1, Nmodes]
+        --> [batch, L - overlaps, Nmodes]
         """
         batch, L, Nmodes = x.shape
         P = get_power(task_info, Nmodes, x.device)
         x0 = x
-        x = torch.fft.fft(x, dim=1)  # [batch, L, Nmodes]
-        
+
+        # STFT: 对x应用STFT
+        x_stft,_,_,_ = stft_on_dimension(x, self.n_fft, self.hop_length, self.n_fft, dim=1)  # [batch, Nmodes, n_fft, steps]
+
         E3 = []
         for (n1, n2) in self.index:
-            A = torch.roll(x, shifts=n1, dims=1)  * torch.roll(x, shifts=n1+n2, dims=1).conj()
-            E3.append((A + A.roll(1, dims=-1)) * torch.roll(x, shifts=n2, dims=1))
-    
-        E = torch.stack(E3, dim=-1) # [batch, L,  Nmodes, L^2]
-        delta = self.fc(E).squeeze(-1)
-        delta = torch.fft.ifft(delta, dim=1) 
+            A = torch.roll(x_stft, shifts=n1, dims=2) * torch.roll(x_stft, shifts=n1 + n2, dims=2).conj()
+            E3.append((A + A.roll(1, dims=1)) * torch.roll(x_stft, shifts=n2, dims=2))
 
-        # x0 + delta * P[:,None,None] = ifft(x + delta * P[:,None,None])
-        return (x0 + delta * P[:,None,None])[:,(self.overlaps//2):L-(self.overlaps//2),:]
+        E = torch.stack(E3, dim=-1)  # [batch, Nmodes, n_fft, steps, len(index)]
+        delta = self.fc(E).squeeze(-1)   # [batch, Nmodes, n_fft, steps]
 
-    def rmps(self, strides=-1) -> int:
+        # ISTFT: 对delta进行逆STFT
+        delta_istft = istft_on_dimension(delta, x0.shape[1], self.n_fft, self.hop_length, self.n_fft, x0.shape, dim=1)  # [batch, L, Nmodes]
+
+        # 组合原始信号和补偿后的信号
+        output = (x0 + delta_istft * P[:, None, None])
+
+        # 截取中心部分以匹配原始信号长度
+        return output[:, (self.overlaps//2):L-(self.overlaps//2), :]
+
+    def rmps(self) -> int:
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
-        if strides == -1: strides = self.strides
-        if strides == -1: strides = self.overlaps + 1
+        
+        FFT_size = self.strides + self.overlaps
+        return (4*len(self.index)*3*FFT_size + rmps_fft(FFT_size)*2)/self.strides
 
-        FFT_size = strides + self.overlaps
-        return (4*len(self.index)*3*FFT_size + rmps_fft(FFT_size)*2)/strides
+# 需要定义的辅助函数和类，例如 get_power 和 ComplexLinear
 
+if __name__ == '__main__':
+    net = EqStftPBC()
+    x = torch.rand(5,10000,2)+1j 
+    z = torch.rand(5,4)
 
-
-# class EqFrePBCstep(nn.Module):
-
-
-                
-if __name__ == "__main__":
-    M = 41
-    Nmodes = 2
-    batch = 2
-    x = torch.randn(batch, 41, Nmodes) + 0j
-    task_info = torch.randn(batch, 4)
-    eq = EqFrePBC(M)
-    y = eq(x, task_info)
-    print(y.shape)  # [batch, L, Nmodes]
+    y = net(x,z)
+    print(y.shape)

@@ -134,6 +134,18 @@ def frequency_cut_receiver(
     return Eout
 
 
+def map_symbols_to_indices(X, Y = QAM(16).const()):
+
+    # 扩展X的维度，使其能够与Y进行广播运算
+    X_expanded = X.unsqueeze(-1)  # [B, T, 1]
+    
+    # 计算X中每个符号与Y中符号的距离，并找到最小距离的索引
+    distances = torch.abs(X_expanded - Y)  # [B, T, N]
+    indices = torch.argmin(distances, dim=-1)  # [B, T]
+    
+    return indices
+
+
 def nearst_symb(y, constSymb: torch.Tensor = QAM(16).const().to(torch.complex64)):  # type: ignore
     """
     y: normaized symbols.

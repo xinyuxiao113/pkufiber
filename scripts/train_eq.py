@@ -51,7 +51,9 @@ def check_data_config(config, overlaps:int=0):
     '''
     define the window size for training and testing data.
     '''
-    if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep']:
+    if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 
+                                'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep',
+                                  'EqDBP', 'EqDBP_test', 'EqPbcDBP', 'EqFreqDBP', 'EqStftPBC', 'EqFreqTimePBC']:
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps
         config['train_data']['Tx_window'] = True
@@ -91,6 +93,9 @@ def define_optimizer(net, config):
         else:
             print('Train nn only.', flush=True)
             optimizer = torch.optim.Adam([{'params': net.nn.parameters(), 'lr': config['lr']*10}])
+    elif config['model_name'] == 'EqFreqTimePBC':
+        print('Use different learning rate for AMPBC and FreqPBC !', flush=True)
+        optimizer = torch.optim.Adam([{'params': net.ampbc.parameters(), 'lr': 1e-4}, {'params': net.stftpbc.parameters(), 'lr': 1e-6}])
     else:
         print('Use same learning rate for all parameters !', flush=True)
         optimizer = torch.optim.Adam([{'params': net.parameters(), 'lr': config['lr']}])
@@ -114,6 +119,7 @@ def test_model(net, dataloader, device='cuda:0'):
         for Rx, Tx, info in dataloader:
             Rx, Tx, info = Rx.to(device), Tx.to(device), info.to(device)   # [batch, window_size, Nomdes]
             PBC = net(Rx, info)                                # [batch,  Nomdes]  or [batch, window_size - overlaps,  Nomdes]
+            # print(PBC.shape, Tx.shape)
             assert PBC.ndim == Tx.ndim
             if Tx.ndim == 3:
                 Tx = Tx[:, net.overlaps//2:Tx.shape[1]-net.overlaps//2, :]

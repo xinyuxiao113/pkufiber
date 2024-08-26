@@ -2,8 +2,14 @@
 
 from .exploration.pbc_nn import EqAMPBCaddNN, EqAMPBCaddFNO
 from .exploration.new_idea import EqSoNN, EqAMPBCaddConv
+from .exploration.eqdbp import EqDBP
+from .exploration.eqdbp_test import EqDBP_test
+from .exploration.eqpbcdbp import EqPbcDBP
+from .exploration.eqfreqdbp import EqFreqDBP
+from .exploration.freqtimepbc import EqFreqTimePBC
+
 from .baselines import cdc, dbp
-from .pbc import IndexType, EqFrePBC
+from .pbc import IndexType, EqFrePBC, EqStftPBC
 from .pbc import EqPBC, EqAMPBC, EqAMPBCstep, EqPBCstep, MultiStepAMPBC, MultiStepPBC, EqPBCNN, EqSoPBC
 from .ldbp import FDBP, MetaDBP, downsamp, FreqDBP, PbcDBP
 from .nneq import EqCNNBiLSTM, EqBiLSTM, EqMLP, EqID

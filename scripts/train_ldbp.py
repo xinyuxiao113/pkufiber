@@ -79,15 +79,16 @@ def test_model(net, test_loader, taps=32, device='cuda:0', ber_discard=20000):
         z1 = torch.tensor(jax.device_get(z.val))
         z2 = torch.tensor(jax.device_get(symb_in[z.t.start:z.t.stop]))
 
-        z1_list.append(z1)
-        z2_list.append(z2)
+        assert z1.shape[0] > ber_discard, 'ber_discard is too large'
+        z1_list.append(z1[ber_discard:])
+        z2_list.append(z2[ber_discard:])
     
     z1 = torch.cat(z1_list, dim=0)
     z2 = torch.cat(z2_list, dim=0)
     
-    mse_value = mse(z1[ber_discard:], z2[ber_discard:])
-    power_value = torch.mean(torch.abs(z2[ber_discard:])**2).item()
-    ber = np.mean(pf.ber(z1[ber_discard:], z2[ber_discard:])['BER'])
+    mse_value = mse(z1, z2)
+    power_value = torch.mean(torch.abs(z2)**2).item()
+    ber = np.mean(pf.ber(z1, z2)['BER'])
     q_path = pf.qfactor_path(z1, z2, Ntest=10000, stride=1000)
     snr = 10 * np.log10(power_value / mse_value)
     
