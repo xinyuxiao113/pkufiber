@@ -27,25 +27,17 @@ class EqBiLSTMClass(nn.Module):
             batch_first=True,
         )
         self.dense = nn.Linear(2 * hidden_size,  classes, bias=True)
-        # nn.init.normal_(self.dense.weight, mean=0.0, std=0.01)  # Adjust the mean and std as needed
+        nn.init.normal_(self.dense.weight, mean=0.0, std=0.01)  # Adjust the mean and std as needed
 
     def forward(self, x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:
         P = get_power(task_info, self.Nmodes, x.device)
-        x = x * torch.sqrt(P[:, None, None])  # [batch, M, Nmodes]
-        x0 = x[:, self.M // 2, :]  # Complex [B, M, Nmodes]  -> complex [B, Nmodes]
         x = torch.cat(
             [x.real, x.imag], dim=-1
         )  # Complex [B, M, Nmodes]  -> float [B, M, Nmodes*2]
 
         x, _ = self.lstm(x)  # float [B, M, Nmodes*2]  -> float [B, M, hidden_size*2]
+        x = x[:,x.shape[1]//2,:]
         x = self.dense(x)    # [B, M, hidden_size * 2] -> [B, M, 16]
-
-        # convert to complex
-        x = x.view(-1, self.Nmodes, 2)  # float [B, Nmodes*2] -> float [B, Nmodes, 2]
-        x = x[..., 0] + (1j) * x[..., 1]  # float [B, Nmodes, 2] -> complex [B, Nmodes]
-        if self.res_net:
-            x = x + x0
-        x = x / torch.sqrt(P[:, None])  # [batch, Nmodes]
         return x
 
     def rmps(self) -> int:

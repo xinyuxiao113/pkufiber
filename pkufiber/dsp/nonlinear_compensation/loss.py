@@ -63,8 +63,15 @@ def adaptive_ber_v6(predict, truth, epoch=0):
     return torch.mean(well(dis, mu))
 
 
-# def cross_entropy(predict, truth, epoch=0):
-#     '''
-#     predict, truth: [B, N, Nmodes],
-#     '''
+
+def l1_l2_regularization_loss(model, l1_lambda=1e-5, l2_lambda=1e-4) -> torch.Tensor:
+    l1_loss = 0.0
+    l2_loss = 0.0
     
+    for param in model.parameters():
+        if param.requires_grad:
+            l1_loss += torch.sum(torch.abs(param))
+            l2_loss += torch.sum(param ** 2)
+    
+    total_loss = l1_loss * l1_lambda  +  l2_loss * l2_lambda
+    return total_loss # type: ignore

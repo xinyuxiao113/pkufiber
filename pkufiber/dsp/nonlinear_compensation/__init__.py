@@ -12,7 +12,7 @@ from .baselines import cdc, dbp
 from .pbc import IndexType, EqFrePBC, EqStftPBC
 from .pbc import EqPBC, EqAMPBC, EqAMPBCstep, EqPBCstep, MultiStepAMPBC, MultiStepPBC, EqPBCNN, EqSoPBC
 from .ldbp import FDBP, MetaDBP, downsamp, FreqDBP, PbcDBP
-from .nneq import EqCNNBiLSTM, EqBiLSTM, EqMLP, EqID
+from .nneq import EqCNNBiLSTM, EqBiLSTM, EqMLP, EqID, EqBiLSTMClass, EqBiLSTMstep
 from .fno.fno import EqFno
 
 

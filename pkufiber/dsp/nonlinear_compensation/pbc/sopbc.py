@@ -37,6 +37,7 @@ class EqSoPBC(nn.Module):
             ]
         )
 
+
     def forward(self, x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:
         """
         Input:

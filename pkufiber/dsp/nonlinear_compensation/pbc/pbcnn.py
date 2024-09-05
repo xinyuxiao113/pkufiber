@@ -51,6 +51,10 @@ class EqPBCNN(nn.Module):
                 for _ in range(self.pol_num)
             ]
         )
+        for net in self.nn:
+            nn.init.normal_(net[-1].real.weight, std=1e-4) # type: ignore
+            nn.init.normal_(net[-1].imag.weight, std=1e-4) # type: ignore
+
 
 
     def forward(self, x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:

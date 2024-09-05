@@ -5,8 +5,8 @@ from torch.utils.data import DataLoader
 
 import pkufiber.dsp.nonlinear_compensation as nl
 import pkufiber.dsp.nonlinear_compensation.loss as loss_lib
-from pkufiber.simulation.receiver import ber 
-from pkufiber.dsp.nonlinear_compensation.loss import mse, adaptive_ber, p_mse, weight_mse, l1_l2_regularization_loss
+from pkufiber.simulation.receiver import ber, map_symbols_to_indices
+from pkufiber.dsp.nonlinear_compensation.loss import mse, adaptive_ber, p_mse, weight_mse
 from pkufiber.utils import qfactor
 
 from pkufiber.data import FiberDataset, MixFiberDataset
@@ -23,8 +23,8 @@ def write_log(writer, epoch, train_loss, metric):
     '''
 
     writer.add_scalar('Loss/train',  train_loss, epoch)
-    writer.add_scalar('Loss/test',  metric['MSE'], epoch)
-    writer.add_scalar('Metric/SNR', metric['SNR'], epoch)
+    # writer.add_scalar('Loss/test', metric['MSE'], epoch)
+    # writer.add_scalar('Metric/SNR', metric['SNR'], epoch)
     writer.add_scalar('Metric/BER', metric['BER'], epoch)
     writer.add_scalar('Metric/Qsq', metric['Qsq'], epoch)
 
@@ -52,7 +52,7 @@ def check_data_config(config, overlaps:int=0):
     define the window size for training and testing data.
     '''
     if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 
-                                'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep', 'EqBiLSTMstep',
+                                'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep',
                                   'EqDBP', 'EqDBP_test', 'EqPbcDBP', 'EqFreqDBP', 'EqStftPBC', 'EqFreqTimePBC']:
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps
@@ -117,92 +117,55 @@ def test_model(net, dataloader, device='cuda:0'):
 
     with torch.no_grad():
         for Rx, Tx, info in dataloader:
+            Tx = map_symbols_to_indices(Tx)
             Rx, Tx, info = Rx.to(device), Tx.to(device), info.to(device)   # [batch, window_size, Nomdes]
-            PBC = net(Rx, info)                                # [batch,  Nomdes]  or [batch, window_size - overlaps,  Nomdes]
-            # print(Rx.shape, Tx.shape, PBC.shape)
-            assert PBC.ndim == Tx.ndim
-            if Tx.ndim == 3:
-                Tx = Tx[:, net.overlaps//2:Tx.shape[1]-net.overlaps//2, :]
-            
-            # print(Rx.shape, Tx.shape, PBC.shape)
-            power_value += mse(Tx, 0).item()*Tx.shape[0]
-            mse_value += mse(PBC, Tx).item()*Tx.shape[0]
-            ber_value += np.mean(ber(PBC, Tx)['BER'])*Tx.shape[0]
+            PBC = net(Rx, info)              # [batch,  16]
+            _, predicted = torch.max(PBC, dim=-1)
+            # print(predicted.shape, Tx.shape)
+            ber_value += (predicted != Tx[:,0]).sum().item()
             Nbatch += Tx.shape[0]
 
             ys.append(PBC.cpu().detach())
             xs.append(Tx.cpu().detach())
-    power_value = power_value/Nbatch
-    mse_value = mse_value/Nbatch
     ber_value = ber_value/Nbatch
     net.train()
 
-    return {'MSE':mse_value, 'SNR': 10*np.log10(power_value/mse_value), 'BER':ber_value, 'Qsq': qfactor(ber_value)}, (torch.cat(ys, dim=0), torch.cat(xs, dim=0))
+    return {'BER':ber_value, 'Qsq': qfactor(ber_value)}, (torch.cat(ys, dim=0), torch.cat(xs, dim=0))
 
 
 
-def train_model(
-    writer, 
-    need_weight, 
-    loss_func, 
-    net, 
-    train_loader, 
-    test_loader, 
-    optimizer, 
-    scheduler,  # 设置为可选
-    epochs,       # 设置默认值
-    model_path, 
-    save_model=True, 
-    save_interval=1, 
-    device='cuda:0', 
-    model_info=None,
-    l1_lamba=1e-3,
-    l2_lamba=1e-3,
-):
+def train_model(writer, need_weight, loss_func, net, train_loader, test_loader, optimizer, scheduler, epochs, model_path, save_model=True, save_interval=1, device='cuda:0', model_info={}):
     metric, result = test_model(net, test_loader)
-    print('Test BER: %.5f, Qsq: %.5f, MSE: %.5f' % (metric['BER'], metric['Qsq'], metric['MSE']), flush=True)
+    print('Test BER: %.5f, Qsq: %.5f' % (metric['BER'], metric['Qsq']), flush=True)
     write_log(writer, 0, 0, metric)
+
+    criterion = torch.nn.CrossEntropyLoss() 
 
     for epoch in range(1, epochs + 1):
         N = len(train_loader)
         train_loss = 0
-        regular_loss = 0
         t0 = time.time()
         for i, (Rx, Tx, info) in enumerate(train_loader):
             # Rx,Tx, info: [B, M, Nmodes], [B,Nmodes], [B, 4]   or   [B, N, Nmodes], [B,M, Nmodes], [B, 4]
-            Rx, Tx, info = Rx.to(device), Tx.to(device), info.to(device)
-            PBC = net(Rx, info)
-            assert PBC.ndim == Tx.ndim
-
-            if Tx.ndim == 3:
-                Tx = Tx[:, net.overlaps//2:Tx.shape[1]-net.overlaps//2, :]
-                Rx = Rx[:, net.overlaps//2:Rx.shape[1]-net.overlaps//2, :]
-            else:
-                Rx = Rx[:, Rx.shape[1]//2, :]
-
-            if need_weight:
-                loss =  loss_func(PBC, Tx, epoch=epoch, weight=torch.abs(Rx - Tx)) 
-            else:
-                loss = loss_func(PBC, Tx, epoch=epoch)
+            Tx = map_symbols_to_indices(Tx)
+            Tx = Tx.to(device)    # [B, Nmodes]
+            Rx, info = Rx.to(device), info.to(device)
+            PBC = net(Rx, info)  # [B, M, 16]
             
-            regular_term = l1_l2_regularization_loss(net, l1_lambda=l1_lamba, l2_lambda=l2_lamba)
-            total_loss = loss + regular_term
-            optimizer.zero_grad()
-            total_loss.backward()
-            optimizer.step()
-            train_loss += loss.item()
-            regular_loss += regular_term.item() 
-            # print('Epoch: %d, Loss: %.5f' % (epoch, train_loss/N), flush=True)
-            writer.add_scalar('Loss/train_batch', total_loss.item(), epoch*N+i)
-            writer.add_scalar('Loss/fit_batch', loss.item(), epoch*N+i)
-            writer.add_scalar('Loss/regular_batch', regular_term.item(), epoch*N+i)
+            loss = criterion(PBC, Tx[:,0])  # predict x-pol
 
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()  
+            # print('Epoch: %d, Loss: %.5f' % (epoch, train_loss/N), flush=True)
+            writer.add_scalar('Loss/train_batch', loss.item(), epoch*N+i)
         t1 = time.time()
         scheduler.step()
         metric, _ = test_model(net, test_loader)
 
-        print('Epoch: %d, Loss: %.5f, Regular_term: %.5f, Time: %.5f' % (epoch, train_loss/N, regular_loss/N, t1-t0), flush=True)
-        print('Test BER: %.5f, Qsq: %.5f, MSE: %.5f' % (metric['BER'], metric['Qsq'], metric['MSE']), flush=True)
+        print('Epoch: %d, Loss: %.5f, time: %.5f' % (epoch, train_loss/N, t1-t0), flush=True)
+        print('Test BER: %.5f, Qsq: %.5f' % (metric['BER'], metric['Qsq']), flush=True)
 
         if save_model and epoch % save_interval == 0:
             ckpt = {
@@ -301,18 +264,17 @@ def main():
         loss_func = partial(p_mse, p=config['p'])
     else:
         loss_func = getattr(loss_lib, config['loss_type'])
-    
-    if 'l1_lambda' not in config.keys(): config['l1_lambda'] = 0
-    if 'l2_lambda' not in config.keys(): config['l2_lambda'] = 0
 
     train_model(writer, need_weight, loss_func, net, 
                 train_loader, test_loader,
                 optimizer, scheduler, 
                 config['epochs'], args.model_path, 
                 save_model=True, save_interval=1, 
-                device=config['device'], model_info=config['model_info'],
-                l1_lamba=config['l1_lambda'], l2_lamba=config['l2_lambda'])
+                device=config['device'], model_info=config['model_info'])
     
     print('Training End at time: ', time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
     writer.close()
+
+
+main()
