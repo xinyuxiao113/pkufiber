@@ -107,6 +107,20 @@ def frame(x: torch.Tensor, flen: int, fstep: int, fnum: int = -1) -> torch.Tenso
     ind = (np.arange(flen)[None, :] + fstep * np.arange(fnum)[:, None]) % N
     return x[ind, ...]
 
+def frame_on_dim(x: torch.Tensor, flen: int, fstep: int, fnum: int = -1, dim: int=0) -> torch.Tensor:
+    '''
+
+    '''
+    x = x.transpose(0, dim)               # (Bd, ..., B0,  ...)
+    x = frame(x, flen, fstep, fnum)       # (fnum, flen, ..., B0, ...)  
+    dims = list(range(x.dim()))
+    dims.append(dims.pop(1))                 
+    x = x.permute(dims)                   # (fnum, ..., B0, ..., flen)  
+    x = x.transpose(0, dim)
+    return x
+
+
+
 
 def circsum(a: torch.Tensor, N: int) -> torch.Tensor:
     """

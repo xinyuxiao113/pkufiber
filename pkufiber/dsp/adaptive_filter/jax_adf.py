@@ -20,7 +20,7 @@ Schedule = Callable[[Any], float]
 
 
 class AdaptiveFilter(NamedTuple):
-    init_fn: InitFn
+    init_fn: Callable
     update_fn: UpdateFn
     eval_fn: ApplyFn
 

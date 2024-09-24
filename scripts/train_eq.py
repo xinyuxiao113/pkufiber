@@ -52,7 +52,7 @@ def check_data_config(config, overlaps:int=0):
     define the window size for training and testing data.
     '''
     if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 
-                                'EqFrePBC', 'EqAMPBCstep', 'EqPBCstep', 'EqBiLSTMstep',
+                                'EqFrePBC', 'EqFreAMPBC',  'EqAMPBCstep', 'EqPBCstep', 'EqBiLSTMstep', 'EqConvAMPBC',
                                   'EqDBP', 'EqDBP_test', 'EqPbcDBP', 'EqFreqDBP', 'EqStftPBC', 'EqFreqTimePBC']:
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps

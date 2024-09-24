@@ -90,7 +90,8 @@ class EqFreqDBP(nn.Module):
         x 4: 4 real multiplications in each complex multiplication.
         '''
         # return TripletFeatures(self.M, self.rho, 'full').hdim * 3 * 4
-        raise NotImplementedError
+        from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc
+        return rmps_edc((self.dtaps-1)*self.step+1) + self.step * (rmps_edc(self.dtaps) + self.nonlinear[0].rmps())
 
 
 if __name__ == "__main__":

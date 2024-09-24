@@ -3,9 +3,11 @@
 """
 
 import torch.nn as nn, torch, numpy as np, torch
+import torch.nn.functional as F
 from typing import Union, List, Tuple, Optional
 
 from pkufiber.core import TorchSignal, TorchTime
+from pkufiber.op import frame, frame_on_dim
 from pkufiber.dsp.layers import ComplexLinear, ComplexConv1d
 from pkufiber.dsp.nonlinear_compensation.op import triplets, trip_op, get_power
 
@@ -191,8 +193,8 @@ class EqAMPBC(nn.Module):
         SEE:  Deep Learning-Aided Perturbation Model-Based Fiber Nonlinearity Compensation 2023.
         '''
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
-        #                           FWM                             + ICIXPM         +  CIXPM          + SPM
-        return (self.features.rmps() + 4*self.features.hdim) + 2*rmps_edc(self.M) + rmps_edc(self.M) + 2*1 + 12 
+        #                           FWM                             + ICIXPM         +  CIXPM          +            SPM
+        return (self.features.rmps() + 4*self.features.hdim) + (rmps_edc(self.M)/2 + 2) + (rmps_edc(self.M)/4 + 6) + 2
 
 
 class EqPBCstep(nn.Module):
@@ -245,14 +247,16 @@ class EqAMPBCstep(nn.Module):
     M: int, default=41, the length of the filter.
     rho: float, default=1, the parameter of the filter.
     fwm_share: bool, default=False, whether the two FWM filters share the same filter.
+    discard: bool, default=True.  discard=True: output shape [batch, L - M + 1, Nmodes], else: [batch, L, Nmodes]
 
     '''
 
-    def __init__(self, M: int = 41, rho: float=1.0, fwm_share: bool=False, decision=False):
+    def __init__(self, M: int = 41, rho: float=1.0, fwm_share: bool=False, decision=False, discard=True):
         super(EqAMPBCstep, self).__init__()
         self.M, self.rho = M, rho
         self.PBC = EqAMPBC(M, rho, fwm_share, decision)
         self.overlaps = self.M - 1
+        self.discard = discard
 
     def forward(self, x: torch.Tensor, task_info: torch.Tensor) -> torch.Tensor:
         """
@@ -261,14 +265,17 @@ class EqAMPBCstep(nn.Module):
         --> [batch, L - M + 1, Nmodes]
         """
         batch, L, Nmodes = x.shape
-        x = x.unfold(1, self.M, 1)  # [batch, L - M + 1, Nmodes, M]
-        x = x.permute(0, 1, 3, 2)  # [batch,L - M + 1, M, Nmodes]
-        x = x.reshape(-1, x.shape[-2], x.shape[-1])  # [batch*(L - M + 1), M, Nmodes]
+        # print(x.shape)
+        if self.discard == False:
+            x = F.pad(x, (0,0,self.overlaps//2, self.overlaps//2), mode='circular')
+        x = x.unfold(1, self.M, 1)  # [batch, L - M + 1, Nmodes, M]  or [batch, L, M]
+        x = x.permute(0, 1, 3, 2)  # [batch,L - M + 1, M, Nmodes] or [batch, L, M, Nmodes]
+        x = x.reshape(-1, x.shape[-2], x.shape[-1])  # [batch*(L - M + 1), M, Nmodes]  or [batch*L, M, Nmodes]
         x = self.PBC(
             x,
             task_info.view(batch, 1, -1)
-            .expand(batch, L - self.M + 1, -1)
-            .reshape((batch * (L - self.M + 1), -1)),
+            .expand(batch, x.shape[0] // batch, -1)
+            .reshape((x.shape[0], -1)),
         )  # [batch*(L - M + 1), Nmodes]
         x = x.reshape(batch, -1, x.shape[-1])  # [batch, L - M + 1, Nmodes]
         return x

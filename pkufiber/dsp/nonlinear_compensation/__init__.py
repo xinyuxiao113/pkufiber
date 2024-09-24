@@ -9,7 +9,7 @@ from .exploration.eqfreqdbp import EqFreqDBP
 from .exploration.freqtimepbc import EqFreqTimePBC
 
 from .baselines import cdc, dbp
-from .pbc import IndexType, EqFrePBC, EqStftPBC
+from .pbc import IndexType, EqFrePBC, EqStftPBC, EqFreAMPBC, EqConvAMPBC
 from .pbc import EqPBC, EqAMPBC, EqAMPBCstep, EqPBCstep, MultiStepAMPBC, MultiStepPBC, EqPBCNN, EqSoPBC
 from .ldbp import FDBP, MetaDBP, downsamp, FreqDBP, PbcDBP
 from .nneq import EqCNNBiLSTM, EqBiLSTM, EqMLP, EqID, EqBiLSTMClass, EqBiLSTMstep

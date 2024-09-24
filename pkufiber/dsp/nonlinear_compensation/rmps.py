@@ -38,7 +38,7 @@ def rmps_fdbp(Nd, Nf, step, sps=2):
         step: number of steps.
         sps: samples per symbol.
     '''
-    return sps*step*(rmps_edc(Nd) + rmps_edc(Nf)) 
+    return sps*step*(rmps_edc(Nd) + rmps_edc(Nf)/2) 
 
 
 def rmps_dbp(Nstps, Nspan, Nd_EDC):

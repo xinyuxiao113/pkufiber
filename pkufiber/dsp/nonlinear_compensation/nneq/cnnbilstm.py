@@ -20,9 +20,9 @@ class EqCNNBiLSTM(nn.Module):
         self,
         M: int = 41,
         Nmodes: int = 2,
-        channels: int = 244,
-        kernel_size: int = 10,
-        hidden_size: int = 113,
+        channels: int = 64,
+        kernel_size: int = 11,
+        hidden_size: int = 40,
         num_layers: int = 1,
         res_net: bool = True,
     ):

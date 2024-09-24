@@ -82,6 +82,9 @@ class FiberDataset(Dataset):
         self.info = []  # list of  [4]
         self.grp_attrs = []
 
+        if not os.path.exists(self.path):
+            raise FileNotFoundError(f'{path} not exist!')
+        
         with h5py.File(path, "r") as f:
             total_length = 0
 

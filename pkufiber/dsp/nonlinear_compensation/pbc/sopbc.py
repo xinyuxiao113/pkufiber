@@ -66,7 +66,7 @@ class EqSoPBC(nn.Module):
         ]  # [batch, 1]
         E2 = torch.cat(E2, dim=-1)  # [batch, Nmodes]
 
-        return self.pbc(x, task_info)  + E2 * P[:, None]**2
+        return self.pbc(x, task_info)  + 0.01 * E2 * P[:, None]**2
          # [batch, Nmodes]
 
     def rmps(self) -> int:

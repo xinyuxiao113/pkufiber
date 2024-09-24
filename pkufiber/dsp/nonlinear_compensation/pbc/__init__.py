@@ -1,6 +1,6 @@
 from .pbc import EqPBC, EqPBCstep, MultiStepPBC
 from .pbc import EqAMPBC, EqAMPBCstep, MultiStepAMPBC
-from .fre_pbc import EqFrePBC
+from .fre_pbc import EqFrePBC, EqFreAMPBC, EqConvAMPBC
 from .stftpbc import EqStftPBC
 from .pbcnn import EqPBCNN 
 from .sopbc import EqSoPBC
@@ -10,6 +10,7 @@ from .regression import fit, predict, kernel
 __all__ = [
     "EqStftPBC",
     "EqFrePBC",
+    "EqFreAMPBC",
     "EqPBC",
     "EqPBCstep",
     "MultiStepPBC",

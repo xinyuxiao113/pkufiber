@@ -1,10 +1,12 @@
 #!/bin/bash
 
-M_values=(81 161)
-rho_values=(1 2 4 8)
-config=configs/0801/ampbcstep.yaml
+ntaps_values=(21 41 81)
+rho_values=(0.02 0.04 0.08)
+ol_values=(10 20 40 80)
+strides=(11 21 41 81)
+config=configs/0909/fredbp.yaml
 
-for M_value in "${M_values[@]}"; do
+for ntaps_value in "${ntaps_values[@]}"; do
     for rho_value in "${rho_values[@]}"; do
         echo "Running experiment with M=$M_value, rho=$rho_value"
         index=80G_3ch_ampbcstep_M"$M_value"_rho"$rho_value"
