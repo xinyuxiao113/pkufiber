@@ -27,3 +27,5 @@ python -m scripts.modify_yaml $config $config test_data.strides $strides
 
 # testing
 python -m scripts.test_eq --path experiments/$index --test_config configs/dsp/test_eq.yaml
+
+# print

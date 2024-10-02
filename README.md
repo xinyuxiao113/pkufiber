@@ -12,3 +12,9 @@ pip install -e .
 - 在dsp/nonlinear_compensation/下开发模型
 - 在nonlinear_compensation/__init__.py 中注册模型
 - 在scripts下train_eq.py, test_eq.py中增加设置关于Tx_window, window_size
+
+
+# 生成数据
+
+
+# 训练模型

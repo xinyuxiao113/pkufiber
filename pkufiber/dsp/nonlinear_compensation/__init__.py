@@ -4,19 +4,20 @@ from .exploration.pbc_nn import EqAMPBCaddNN, EqAMPBCaddFNO
 from .exploration.new_idea import EqSoNN, EqAMPBCaddConv
 from .exploration.eqdbp import EqDBP
 from .exploration.eqdbp_test import EqDBP_test
-from .exploration.eqpbcdbp import EqPbcDBP
-from .exploration.eqfreqdbp import EqFreqDBP
+from .exploration.eqpbcdbp import EqPbcDBP, EqAMPbcDBP
+from .exploration.eqfreqdbp import EqFreqPbcDBP, EqFreqAMPbcDBP
 from .exploration.freqtimepbc import EqFreqTimePBC
 
 from .baselines import cdc, dbp
-from .pbc import IndexType, EqFrePBC, EqStftPBC, EqFreAMPBC, EqConvAMPBC
+from .pbc import IndexType, EqFrePBC, EqStftPBC,EqStftAMPBC, EqFreAMPBC, EqConvAMPBC
 from .pbc import EqPBC, EqAMPBC, EqAMPBCstep, EqPBCstep, MultiStepAMPBC, MultiStepPBC, EqPBCNN, EqSoPBC
-from .ldbp import FDBP, MetaDBP, downsamp, FreqDBP, PbcDBP
+from .ldbp import FDBP, MetaDBP, downsamp, FreqPbcDBP, PbcDBP, AMPbcDBP, FreqAMPbcDBP
 from .nneq import EqCNNBiLSTM, EqBiLSTM, EqMLP, EqID, EqBiLSTMClass, EqBiLSTMstep
 from .fno.fno import EqFno
 
 
 __all__ = [
+    "EqStftAMPBC",
     "EqFrePBC",
     "EqAMPBCaddConv",
     "EqSoNN",
@@ -39,6 +40,6 @@ __all__ = [
     "EqID",
     "EqFno",
     "IndexType",
-    "FreqDBP",
+    "FreqPbcDBP",
     "PbcDBP",
 ]

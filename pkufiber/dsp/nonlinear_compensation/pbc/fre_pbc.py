@@ -111,10 +111,10 @@ class EqFreAMPBC(nn.Module):
         batch, L, Nmodes = x.shape
         P = get_power(task_info, Nmodes, x.device)
         x0 = x
-        x = torch.fft.fft(x, dim=1)             # [batch, L, Nmodes]
-        delta = 0.01*self.pbc(x, task_info)          # [batch, L, Nmodes]
-        delta = torch.fft.ifft(delta, dim=1)    # [batch, L, Nmodes]
-        return (x0 + delta * P[:,None,None])[:,(self.overlaps//2):L-(self.overlaps//2),:]
+        x = torch.fft.fft(x, dim=1)     # [batch, L, Nmodes]
+        x = self.pbc(x, task_info)      # [batch, L, Nmodes]
+        x = torch.fft.ifft(x, dim=1)    # [batch, L, Nmodes]
+        return x[:,(self.overlaps//2):L-(self.overlaps//2),:]
 
     def rmps(self, strides=-1) -> int:
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
