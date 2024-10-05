@@ -117,12 +117,13 @@ class EqDBP_test(nn.Module):
 
 
     def rmps(self) -> int:
-        '''
-        real mulitplication times per sample.
-        x 4: 4 real multiplications in each complex multiplication.
-        '''
-        # return TripletFeatures(self.M, self.rho, 'full').hdim * 3 * 4
-        raise NotImplementedError
+            '''
+            real mulitplication times per sample.
+            x 4: 4 real multiplications in each complex multiplication.
+            '''
+            # return TripletFeatures(self.M, self.rho, 'full').hdim * 3 * 4
+            from pkufiber.dsp.nonlinear_compensation.rmps import rmps_fdbp, rmps_edc
+            return rmps_edc((self.dtaps-1)*self.step+1) + rmps_fdbp(self.dtaps, self.ntaps, self.step, sps=1)
 
 
 if __name__ == "__main__":

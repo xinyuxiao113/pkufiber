@@ -15,6 +15,12 @@ pip install -e .
 
 
 # 生成数据
-
+python -m scripts.data --config configs/data/base_test.yaml --path data/test.h5
 
 # 训练模型
+index=0926_eqfdbp_v3
+config=configs/0926_dbp_sps1/fdbp.yaml
+./scripts/train_eq.sh $index $config
+
+# 测试模型
+python -m scripts.test_eq --path experiments/$index --test_config configs/dsp/test_eq.yaml

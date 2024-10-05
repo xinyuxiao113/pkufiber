@@ -122,7 +122,7 @@ class EqFreAMPBC(nn.Module):
         if strides == -1: strides = self.overlaps + 1
 
         FFT_size = strides + self.overlaps
-        return (4*len(self.index)*3*FFT_size + rmps_fft(FFT_size)*2)/strides
+        return (self.pbc.rmps()*FFT_size + rmps_fft(FFT_size)*2)/strides
 
 
 class EqConvAMPBC(nn.Module):
@@ -171,12 +171,7 @@ class EqConvAMPBC(nn.Module):
 
     def rmps(self, strides=-1) -> int:
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
-        if strides == -1: strides = self.strides
-        if strides == -1: strides = self.overlaps + 1
-
-        FFT_size = strides + self.overlaps
-        return (4*len(self.index)*3*FFT_size + rmps_fft(FFT_size)*2)/strides
-
+        raise NotImplementedError
 
                 
 if __name__ == "__main__":

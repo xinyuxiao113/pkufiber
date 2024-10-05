@@ -57,7 +57,7 @@ class TripletFeatures(nn.Module):
             IndexType.full: lambda: abs(m * n) <= self.rho * self.L // 2 and abs(m) + abs(n) <= self.L // 2,
             IndexType.reduce_1: lambda: abs(m * n) <= self.rho * self.L // 2 and n >= m and abs(m) + abs(n) <= self.L // 2,
             IndexType.reduce_2: lambda: abs(m * n) <= self.rho * self.L // 2 and n >= abs(m) and abs(m) + abs(n) <= self.L // 2,
-            IndexType.FWM: lambda: abs(m * n) <= self.rho * self.L // 2 and n >= abs(m) and abs(m) + abs(n) <= self.L // 2 and m * n != 0
+            IndexType.FWM: lambda:      abs(m * n) <= self.rho * self.L // 2 and n >= abs(m) and abs(m) + abs(n) <= self.L // 2 and m * n != 0
         }
         if self.index_type not in index_checks:
             raise ValueError("Invalid index type. please choose from ['full','reduce-1', 'reduce-2','FWM']")

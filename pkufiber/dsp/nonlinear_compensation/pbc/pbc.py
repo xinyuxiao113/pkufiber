@@ -193,8 +193,8 @@ class EqAMPBC(nn.Module):
         SEE:  Deep Learning-Aided Perturbation Model-Based Fiber Nonlinearity Compensation 2023.
         '''
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
-        #                           FWM                             + ICIXPM         +  CIXPM          +            SPM
-        return (self.features.rmps() + 4*self.features.hdim) + (rmps_edc(self.M)/2 + 2) + (rmps_edc(self.M)/4 + 6) + 2
+        #                           FWM                             + ICIXPM         +             CIXPM   
+        return (self.features.rmps() + 4*self.features.hdim) + (rmps_edc(self.M)/2 + 6) + (rmps_edc(self.M)/4 + 6) 
 
 
 class EqPBCstep(nn.Module):

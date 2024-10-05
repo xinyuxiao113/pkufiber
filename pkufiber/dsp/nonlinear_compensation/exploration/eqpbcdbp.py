@@ -95,7 +95,8 @@ class EqPbcDBP(nn.Module):
         '''
         # return TripletFeatures(self.M, self.rho, 'full').hdim * 3 * 4
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc
-        return rmps_edc((self.dtaps-1)*self.step+1) + self.step * (rmps_edc(self.dtaps) + self.nonlinear[0].rmps())
+        sps = 1
+        return rmps_edc((self.dtaps-1)*self.step+1) + self.step * sps * (rmps_edc(self.dtaps) + self.nonlinear[0].rmps())
 
 
 
@@ -175,7 +176,8 @@ class EqAMPbcDBP(nn.Module):
         '''
         # return TripletFeatures(self.M, self.rho, 'full').hdim * 3 * 4
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc
-        return rmps_edc((self.dtaps-1)*self.step+1) + self.step * (rmps_edc(self.dtaps) + self.nonlinear[0].rmps())
+        sps = 1
+        return rmps_edc((self.dtaps-1)*self.step+1) + self.step * sps * (rmps_edc(self.dtaps) + self.nonlinear[0].rmps())
 
 
 if __name__ == "__main__":

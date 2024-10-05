@@ -137,7 +137,7 @@ class EqStftAMPBC(nn.Module):
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_edc, rmps_fft
         
         FFT_size = self.strides + self.overlaps
-        return (4*len(self.index)*3*FFT_size + rmps_fft(FFT_size)*2)/self.strides
+        return (self.pbc.rmps()*FFT_size + rmps_fft(FFT_size)*2)/self.strides
 
 
 
