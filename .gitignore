@@ -1,5 +1,6 @@
 .vscode 
 .pytest_cache
+fig/*
 configs/* 
 data/* 
 experiments/*

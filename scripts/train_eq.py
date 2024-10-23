@@ -53,7 +53,9 @@ def check_data_config(config, overlaps:int=0):
     '''
     if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 
                                 'EqFrePBC', 'EqFreAMPBC',  'EqAMPBCstep', 'EqPBCstep', 'EqBiLSTMstep', 'EqConvAMPBC', 'EqStftPBC','EqStftAMPBC', 'EqFreqTimePBC',
-                                  'EqDBP', 'EqDBP_test', 'EqPbcDBP','EqAMPbcDBP', 'EqFreqPbcDBP', 'EqFreqAMPbcDBP']:
+                                  'EqDBP', 'EqDBP_test', 'EqPbcDBP','EqAMPbcDBP', 'EqFreqPbcDBP', 'EqFreqAMPbcDBP',
+                                  'EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD']:
+        
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps
         config['train_data']['Tx_window'] = True
@@ -186,6 +188,7 @@ def train_model(
                 loss = loss_func(PBC, Tx, epoch=epoch)
             
             regular_term = l1_l2_regularization_loss(net, l1_lambda=l1_lamba, l2_lambda=l2_lamba)
+            # dispersion_loss = 
             total_loss = loss + regular_term
             optimizer.zero_grad()
             total_loss.backward()
@@ -239,14 +242,13 @@ def main():
     # load model 
     net = init_model(config['model_name'], config['model_info'])
 
+    ############################### special case #########################################
+    # EqSOPBC: load pbc params and freeze pbc parameters
     if config['model_name'] == 'EqSoPBC' and 'pbc_path' in config.keys():
         load_param(net.pbc, config['pbc_path'])
         for param in net.pbc.parameters():
             param.requires_grad = False
         print('Freeze pbc parameters !', flush=True)
-
-    if 'model_path' in config.keys():
-        load_param(net, config['model_path'])
 
     if config['model_name'] == 'EqSoNN' and 'pbc_path' in config.keys():
         load_param(net.pbc, config['pbc_path'])
@@ -267,8 +269,23 @@ def main():
         # init net.nn.dense.weight to zero 
         net.nn.dense.weight.data.fill_(0)
         net.nn.dense.weight.requires_grad = True
+    
+    if 'model_path' in config.keys():
+        load_param(net, config['model_path'])
+
+    ############################### special case #########################################
 
     net = net.to(config['device'])
+    # 实验发现当dtaps比较大时做不做预训练效果差不多，dtaps比较小时预训练效果更好
+    if config['model_name'] in ['EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD']:
+        if config['pretrainD'] == True:
+            weight = config['weightD'] if 'weightD' in config.keys() else None
+            net.linear.train_filter(lr=3e-4, weight=weight)    # train D-filter
+
+        # 实验发现不冻结参数的效果更好 ！！
+        if config['trainD_again'] == False:
+            for param in net.linear.parameters():
+                param.requires_grad = False
 
     # optimizer
     optimizer = define_optimizer(net, config)

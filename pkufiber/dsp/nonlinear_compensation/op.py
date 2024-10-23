@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def trip_op(U, V, W, m, n):
@@ -48,3 +49,18 @@ def get_power(task_info, Nmodes, device):
     )  # [batch] or ()
     P = P.to(device)
     return P
+
+
+def estimate_dtaps(L, bandwitdth, samplerate, beta2=2.1044895291667417e-26, overfactor=1.8):
+    '''
+        estimate dtaps in time domain.
+    Input:
+        L: distance.[m]
+        samplerate: [Hz]
+        beta2: diapersion coeff. [s^2/m]
+    Output:
+        int.
+
+    '''
+    mintaps = int(np.ceil(2 * np.pi * L * beta2 * bandwitdth * samplerate) * overfactor)
+    return mintaps - (mintaps % 4) + 5

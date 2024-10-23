@@ -32,7 +32,7 @@ from .core import TorchInput, TorchSignal, TorchTime
 from .utils import show_symb
 from .op import get_beta2, get_omega
 
-from .dsp.nonlinear_compensation.op import get_power
+from .dsp.nonlinear_compensation.op import get_power, estimate_dtaps
 from .dsp.nonlinear_compensation.loss import mse, adaptive_ber
 
 from .simulation.receiver import ser, ber, qfactor, qfactor_path, qfactor_all

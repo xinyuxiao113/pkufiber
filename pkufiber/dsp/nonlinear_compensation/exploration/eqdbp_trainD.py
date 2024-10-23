@@ -11,6 +11,7 @@ from pkufiber.dsp.nonlinear_compensation.op import triplets, trip_op, get_power
 from pkufiber.dsp.op import dispersion_kernel, dconv, nconv
 from pkufiber.op import get_beta2, get_beta1
 from pkufiber.dsp.nonlinear_compensation.pbc.features import TripletFeatures, IndexType
+from pkufiber.dsp.nonlinear_compensation.ldbp.filter import DispersionFilter,NonlinearFilter   
 
 '''
 每个模型都需要 M, overlaps参数
@@ -18,45 +19,8 @@ from pkufiber.dsp.nonlinear_compensation.pbc.features import TripletFeatures, In
 
 
 
-class NonlinearFilter(nn.Module):
-    
-    def __init__(self, Nmodes, step, ntaps, share, gamma=0.0016567, L=2000e3):  
-        super(NonlinearFilter, self).__init__()
-        self.Nmodes = Nmodes
-        self.L = L
-        self.step = step
-        self.ntaps = ntaps
-        self.gamma = gamma
 
-        n_num = 1 if share else self.step
-        self.Nkernel = nn.ParameterList(
-            [
-                nn.Parameter(
-                    torch.zeros(
-                        self.Nmodes, self.Nmodes, self.ntaps, dtype=torch.float32
-                    )
-                )
-                for _ in range(n_num)
-            ]
-        )  # Nonlinear kernel [Nmodes, Nmodes, ntaps]
-
-    def forward(self, x, task_info, i):
-        '''
-        [B, M, Nmodes] -> [B, M - ntaps + 1, Nmodes]
-        '''
-        P = 1e-3 * 10 ** (task_info[:, 0] / 10) / self.Nmodes  # Power [W]
-        phi = nconv(torch.abs(x) ** 2,
-                self.Nkernel[min(i, len(self.Nkernel) - 1)].expand(
-                    x.shape[0], self.Nmodes, self.Nmodes, self.ntaps
-                ),
-                1,)
-        x = x[:, self.ntaps//2:x.shape[1] - (self.ntaps//2)] * torch.exp(1j*phi*self.gamma*P[:,None,None]*self.L / self.step)
-        return x
-    
-
-
-
-class EqDBP(nn.Module):
+class EqDBP_trainD(nn.Module):
     """
     PBC equalizer.
     M: int, default=41, the length of the filter.
@@ -66,8 +30,8 @@ class EqDBP(nn.Module):
 
     """
 
-    def __init__(self, Nmodes, step, dtaps=2001, ntaps=401, n_share=True, Fs=80e9, D=16.5, Fc: float = 299792458 / 1550e-9, Fi: float = 299792458 / 1550e-9, L=2000e3, gamma=0.0016567):
-        super(EqDBP, self).__init__()
+    def __init__(self, Nmodes, step, dtaps=2001, ntaps=401, d_share=True, n_share=True, Fs=80e9, D=16.5, Fc: float = 299792458 / 1550e-9, Fi: float = 299792458 / 1550e-9, L=2000e3, gamma=0.0016567):
+        super(EqDBP_trainD, self).__init__()
         self.Nmodes = Nmodes
         self.step = step
         self.Fs = Fs
@@ -82,6 +46,7 @@ class EqDBP(nn.Module):
         self.beta2 = get_beta2(self.D, self.Fc) / 1e3            # Second-order dispersion coefficient [s^2/m]
         self.beta1 = get_beta1(self.D, self.Fc, self.Fi) / 1e3   # First-order dispersion coefficient [s/m]
 
+        self.linear = DispersionFilter(step, dtaps, L/step, d_train=True, d_share=d_share, Fs=Fs, D=D, Fc=Fc, Fi=Fi)
         self.nonlinear = NonlinearFilter(Nmodes, step, ntaps, n_share, L=L, gamma=gamma)
 
 
@@ -111,12 +76,13 @@ class EqDBP(nn.Module):
                 "Nmodes=1 and pol_num=2 is not a good choise, please set pol_share=True."
             )
         
+
         #  step 1: add dispersion 
-        x = self.disp_time(x, self.L, (self.dtaps-1)*self.step+1)
+        x = self.disp_freq(x, self.L, (self.dtaps-1)*self.step+1)
 
         # step 2: DBP on sps = 1
         for i in range(self.step):
-            x = self.disp_time(x, -self.L / self.step, self.dtaps)
+            x = self.linear(x, i)
             x = self.nonlinear(x, task_info, i)
 
         return x
@@ -130,17 +96,15 @@ class EqDBP(nn.Module):
         # return TripletFeatures(self.M, self.rho, 'full').hdim * 3 * 4
         from pkufiber.dsp.nonlinear_compensation.rmps import rmps_fdbp, rmps_edc
         return rmps_edc((self.dtaps-1)*self.step+1) + rmps_fdbp(self.dtaps, self.ntaps, self.step, sps=1)
-    
-
 
 
 if __name__ == "__main__":
     x = torch.randn(5, 40000, 2) + 1j
     task_info = torch.randn(5, 4)
-    model = EqDBP(Nmodes=2, step=5)
+    model = EqDBP_trainD(Nmodes=2, step=5)
     y = model(x, task_info)
     print(y.shape)
     # print(model.rmps())
     print(model.overlaps)
-    print(model)
     print(model.__class__.__name__)
+    print(model)

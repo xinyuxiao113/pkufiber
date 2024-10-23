@@ -41,7 +41,7 @@ def rmps_fdbp(Nd, Nf, step, sps=2):
     return sps*step*(rmps_edc(Nd) + rmps_edc(Nf)/4 * 2 + 6) 
 
 
-def rmps_dbp(Nstps, Nspan, Nd_EDC):
+def rmps_dbp(Nstps, Nspan, Nd_EDC, sps=1):
     '''
         Real Multiply per Sample (RMPS) for DBP.
     Input:
@@ -50,8 +50,35 @@ def rmps_dbp(Nstps, Nspan, Nd_EDC):
         Nd_EDC: dispersion kernel size for whole EDC.
     '''
     Nd = Nd_EDC / Nspan / Nstps
-    return Nspan*Nstps * rmps_edc(Nd)
+    return sps*Nspan*Nstps * rmps_edc(Nd)
 
+
+def rmps_freqCDC_dbp(sps, step, ol, rmps_nl, strides):
+    '''
+        Real Multiply per Sample (RMPS) for Frequency-Domain DBP.
+    Input:
+        step: number of steps.
+        ol: overlap factor.
+        sps: samples per symbol.
+        strides: number of strides.
+        rmps_nl: RMPS for nonlinear operator.
+    '''
+    Nfft = (strides + ol) * sps
+    rm_per_step = 2*rmps_fft(Nfft) + 4*Nfft + rmps_nl*Nfft
+
+    return step*rm_per_step/strides
+
+def rmps_freqCDC_dbp_opt(sps, step, ol, rmps_nl):
+    '''
+        Real Multiply per Sample (RMPS) for Frequency-Domain DBP.
+    Input:
+        step: number of steps.
+        ol: overlap factor.
+        sps: samples per symbol.
+        strides: number of strides.
+        rmps_nl: RMPS for nonlinear operator.
+    '''
+    return rmps_freqCDC_dbp(sps, step, ol, rmps_nl, ol)
 
 
 

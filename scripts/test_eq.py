@@ -47,7 +47,10 @@ if __name__ == "__main__":
     strides = model_cfg['test_data']['strides'] 
     Tx_window = True if model_cfg['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 
                                 'EqFrePBC', 'EqFreAMPBC',  'EqAMPBCstep', 'EqPBCstep', 'EqBiLSTMstep', 'EqConvAMPBC', 'EqStftPBC','EqStftAMPBC', 'EqFreqTimePBC',
-                                  'EqDBP', 'EqDBP_test', 'EqPbcDBP','EqAMPbcDBP', 'EqFreqPbcDBP', 'EqFreqAMPbcDBP'] else False
+                                  'EqDBP', 'EqDBP_test', 'EqPbcDBP','EqAMPbcDBP', 'EqFreqPbcDBP', 'EqFreqAMPbcDBP',
+                                  'EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD'] else False
+    
+    # Tx_window = False if model_cfg['model_name'] in ['EqBiLSTM', 'EqBiLSTMClass', 'EqCNNBiLSTM', 'EqMLP', 'EqID', 'EqBiLSTMstep'] else True
     window_size = model.overlaps + strides
 
     print(f"strides = {strides}, window_size = {window_size}, Tx_window = {Tx_window}")

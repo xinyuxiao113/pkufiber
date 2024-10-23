@@ -190,6 +190,15 @@ def main():
     dbp = dbp.to(config['device'])
     conv = conv.to(config['device'])
 
+    if config['dbp_name'] == 'FDBP_trainD':
+        if config['pretrainD'] == True:  
+            dbp.linear.train_filter(lr=3e-4, epoch=6000)
+        # fix dbp.linear
+        if config['trainD_again'] == False:
+            for param in dbp.linear.parameters():
+                param.requires_grad = False
+
+
     # optimizer
     optimizer = torch.optim.Adam([{'params': dbp.parameters(), 'lr': config['dbp_lr']}, {'params': conv.parameters(), 'lr': config['conv_lr']}])
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=config['lr_decay_step'], gamma=config['decay_gamma'])

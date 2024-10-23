@@ -8,10 +8,15 @@ from .exploration.eqpbcdbp import EqPbcDBP, EqAMPbcDBP
 from .exploration.eqfreqdbp import EqFreqPbcDBP, EqFreqAMPbcDBP
 from .exploration.freqtimepbc import EqFreqTimePBC
 
+# Train Dispersion filter.
+from .exploration.eqdbp_trainD import EqDBP_trainD, DispersionFilter
+from .exploration.eqpbcdbp_trainD import EqPbcDBP_trainD, EqAMPbcDBP_trainD
+from .exploration.eqfreqdbp_trainD import EqFreqPbcDBP_trainD, EqFreqAMPbcDBP_trainD
+
 from .baselines import cdc, dbp
 from .pbc import IndexType, EqFrePBC, EqStftPBC,EqStftAMPBC, EqFreAMPBC, EqConvAMPBC
 from .pbc import EqPBC, EqAMPBC, EqAMPBCstep, EqPBCstep, MultiStepAMPBC, MultiStepPBC, EqPBCNN, EqSoPBC
-from .ldbp import FDBP, MetaDBP, downsamp, FreqPbcDBP, PbcDBP, AMPbcDBP, FreqAMPbcDBP
+from .ldbp import FDBP, MetaDBP, downsamp, FreqPbcDBP, PbcDBP, AMPbcDBP, FreqAMPbcDBP, FDBP_trainD
 from .nneq import EqCNNBiLSTM, EqBiLSTM, EqMLP, EqID, EqBiLSTMClass, EqBiLSTMstep
 from .fno.fno import EqFno
 
