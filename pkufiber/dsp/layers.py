@@ -30,27 +30,38 @@ class StepFunction(nn.Module):
         idx = (x - self.start).to(torch.int)
         return self.function_values[idx]
 
-
 class MLP(nn.Module):
     """
-    Multi-layer perceptron.
-
+    Multi-layer perceptron with a variable number of hidden layers.
     R^3 -> R^1
     """
 
-    def __init__(self, input_size=4, hidden_size=100, output_size=1):
+    def __init__(self, input_size=4, hidden_size=[200, 50], output_size=1, output_scale=0.1):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, 50)
-        self.fc3 = nn.Linear(50, 2)
-        self.fc4 = nn.Linear(2, output_size, bias=False)
+        
+        # Dynamically create hidden layers
+        layers = []
+        in_size = input_size
+        for h in hidden_size:
+            layers.append(nn.Linear(in_size, h))
+            layers.append(nn.ReLU())  # ReLU after each hidden layer
+            in_size = h
+        
+        # Remove the last ReLU for the last two layers
+        self.hidden_layers = nn.Sequential(*layers)
+        
+        # Last two layers without ReLU
+        self.fc3 = nn.Linear(hidden_size[-1], 2)  # Output from the last hidden layer to 2 units
+        self.fc4 = nn.Linear(2, output_size)  # Output layer
+
+        # Output scaling factor
+        self.output_scale = output_scale
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        x = self.fc4(x)
-        return 0.1 * x
+        x = self.hidden_layers(x)  # Pass through all hidden layers with ReLU activations
+        x = self.fc3(x)  # No ReLU after this layer
+        x = self.fc4(x)  # No ReLU after this layer
+        return self.output_scale * x  # Apply output scaling
 
 
 class Parameter(nn.Module):

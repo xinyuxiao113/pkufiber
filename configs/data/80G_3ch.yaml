@@ -1,0 +1,46 @@
+# simulation config
+
+tx:
+  batch: 40                                             # Number of signals
+  M: 16                                                 # QAM format.
+  Nbits: 400000                                         # Number of bits per channel per mode.
+  sps: 4                                                # Samples per symbol.
+  Nch: 3                                                # Number of channels.
+  Nmodes: 2                                             # Polarization modes. 1 or 2.
+  Rs: 80                                                # [Gbaud]  Symbol rate per channel per mode.
+  freqspace: 96                                         # [GHz] Channel spacing.
+  Pch_dBm: [2,3,4,5,6]                                  # [dBm]  Average power per channel.
+  Ntaps: 4096                                           # Number of taps for the filter.
+  roll: 0.1                                             # Roll-off factor.
+  pulse_type: 'rc'                                      # Pulse type. 'rc' or 'gauss'.
+  device: 'cuda:0'
+
+
+ch:
+  Ltotal: 2000                                          # Total Length. [km]
+  Lspan:  80                                            # Length per span. [km]
+  hz: 0.5                                               # ssfm step size. [km]
+  alpha: 0.2                                            # Attenuation parameter. [dB/km]
+  D: 16.5                                               # Dispersion parameter.  [ps/nm/km]
+  gamma: 1.6567                                         # Nonlinear parameter. [/W/km]
+  Fc: 193414489032258.06                                # Central frequency [Hz] (计算得出 299792458 / 1550e-9)
+  amp: 'edfa'                                           # Amplifier type. 'edfa', 'ideal', or None. [default:'edfa']
+  NF: -10                                               # EDFA Noise Figure. [dB]
+  order: 1                                              # Number of orders for the SSFM.
+  openPMD: False                                        # Open PMD noise or not.
+  Lcorr: 0.1                                            # Fiber Correlation length. [km]
+  Dpmd: 3                                               # PMD parameter. [ps/sqrt(km)]
+  device: 'cuda:0'
+
+
+rx:
+  chid: 0                                        # Channel ID.
+  rx_sps: 2                                      # Samples per symbol.
+  FO: 0                                          # Frequency offset. [GHz]
+  lw: 0                                          # Linewidth. [Hz]
+  phi_lo: 0                                      # Local oscillator phase. [rad]
+  Plo_dBm: 10                                    # Local oscillator power. [dBm]
+  method: 'frequency cut'                        # 'frequency cut' or 'filtering'.
+  device: 'cuda:0'
+
+save_SignalTx: True

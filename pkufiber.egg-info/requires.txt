@@ -8,5 +8,8 @@ scikit-commpy
 tqdm
 tensorboard
 torch
+jupyter
+neuraloperator
+seaborn
 jax
 flax

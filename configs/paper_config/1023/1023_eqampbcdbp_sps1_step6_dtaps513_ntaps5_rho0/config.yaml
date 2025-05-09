@@ -1,0 +1,52 @@
+# model setting
+
+model_name: EqAMPbcDBP_trainD
+
+pretrainD: true
+trainD_again: true
+
+model_info:
+  Nmodes: 2
+  step: 6
+  dtaps: 513
+  ntaps: 5
+  rho: 0
+  d_share: false
+  n_share: false
+  Fs: 80.e+9
+
+
+# data setting
+train_data:
+  path: /home/xiaoxinyu/pkufiber/data/80G_3ch_batch40.h5
+  Nmodes: 2
+  Nch_list: [3]
+  Rs_list: [80]
+  Pch_list: [3]
+  strides: 4000
+  num_symb_per_mode: 800000
+  truncate: 20000
+  pre_transform: Rx_CDCDDLMS(taps=32,lr=[0.015625, 0.0078125])
+
+test_data:
+  path: /home/xiaoxinyu/TorchFiber/dataset_A800/test.h5
+  Nmodes: 2
+  Nch_list: [3]
+  Rs_list: [80]
+  Pch_list: [3]
+  strides: 8000
+  num_symb_per_mode: 100000
+  truncate: 20000
+  pre_transform: Rx_CDCDDLMS(taps=32,lr=[0.015625, 0.0078125])
+
+
+# training setting
+seed: 1232
+epochs: 60
+save_interval: 10
+batch_size: 10
+lr: 0.0001
+lr_decay_step: 30
+decay_gamma: 1
+loss_type: mse
+device: cuda:0

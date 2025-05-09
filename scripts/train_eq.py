@@ -54,7 +54,8 @@ def check_data_config(config, overlaps:int=0):
     if config['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 
                                 'EqFrePBC', 'EqFreAMPBC',  'EqAMPBCstep', 'EqPBCstep', 'EqBiLSTMstep', 'EqConvAMPBC', 'EqStftPBC','EqStftAMPBC', 'EqFreqTimePBC',
                                   'EqDBP', 'EqDBP_test', 'EqPbcDBP','EqAMPbcDBP', 'EqFreqPbcDBP', 'EqFreqAMPbcDBP',
-                                  'EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD']:
+                                  'EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD',
+                                  'EqSNSEDBP', 'EqStftSnsePBC']:
         
         config['train_data']['window_size'] = config['train_data']['strides']  + overlaps
         config['test_data']['window_size'] = config['test_data']['strides']  + overlaps
@@ -277,7 +278,7 @@ def main():
 
     net = net.to(config['device'])
     # 实验发现当dtaps比较大时做不做预训练效果差不多，dtaps比较小时预训练效果更好
-    if config['model_name'] in ['EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD']:
+    if config['model_name'] in ['EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD', 'EqSNSEDBP']:
         if config['pretrainD'] == True:
             weight = config['weightD'] if 'weightD' in config.keys() else None
             net.linear.train_filter(lr=3e-4, weight=weight)    # train D-filter

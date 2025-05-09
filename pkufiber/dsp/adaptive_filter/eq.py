@@ -11,6 +11,7 @@ from .jax_core import JaxSignal, JaxTime, conv1d_t
 import pkufiber.dsp.adaptive_filter.jax_adf as af
 
 
+
 class MimoAf(nn.Module):
     taps: int = 32
     rtap: Any = None
@@ -22,8 +23,8 @@ class MimoAf(nn.Module):
 
     @nn.compact
     def __call__(
-        self, signal: JaxSignal, truth: JaxSignal, update_state: bool
-    ) -> JaxSignal:
+        self, signal: JaxSignal, truth: JaxSignal, update_state: bool, return_weights: bool=False
+    ) -> Union[JaxSignal, Tuple]:
 
         ## parameters
         if self.learnable:
@@ -95,11 +96,14 @@ class MimoAf(nn.Module):
         if update_state:  # TODO
             state.value = (af_step, af_stats)  # type: ignore
 
-        return signal.replace(val=y, t=t, Fs=signal.Fs / sps)  # type: ignore
+        if return_weights:
+            return signal.replace(val=y, t=t, Fs=signal.Fs / sps), af_weights # type: ignore
+        else:
+            return signal.replace(val=y, t=t, Fs=signal.Fs / sps)  # type: ignore
 
 
-@partial(jax.jit, backend="cpu", static_argnums=(2, 3, 4, 5))
-def mimoaf(Rx, Tx, taps=32, sps=2, lead_symbols=2000, lr=[1 / 2**6, 1 / 2**7]):
+# @partial(jax.jit, backend="cpu", static_argnums=(2, 3, 4, 5, 6))
+def mimoaf(Rx, Tx, taps=32, sps=2, lead_symbols=2000, lr=(1 / 2**6, 1 / 2**7), return_weights=False):
     """
     Input:
         Rx: jax.Array, (Nsymb * sps, Nmodes)
@@ -109,7 +113,7 @@ def mimoaf(Rx, Tx, taps=32, sps=2, lead_symbols=2000, lr=[1 / 2**6, 1 / 2**7]):
         lead_symbols: int, number of symbols used to train the filter
         lr: list, learning rate for weight and frequency offset
     Output:
-        z: jax.Array, (Nsymb, Nmodes)
+        z: jax.Array, (Nsymb, Nmodes)  or   (z, weights)
     """
     signal = JaxSignal(val=Rx, t=JaxTime(0, 0, sps), Fs=0)
     truth = JaxSignal(val=Tx, t=JaxTime(0, 0, 1), Fs=0)
@@ -120,8 +124,35 @@ def mimoaf(Rx, Tx, taps=32, sps=2, lead_symbols=2000, lr=[1 / 2**6, 1 / 2**7]):
         learnable=False,
         mimokwargs={"lr_w": lr[0], "lr_f": lr[1], "lr_b": 0},
     )
-    z, state = model.init_with_output(jax.random.PRNGKey(0), signal, truth, True)
+    z, state = model.init_with_output(jax.random.PRNGKey(0), signal, truth, True, return_weights)
     return z
+
+
+def mimoaf_lms(Rx, Tx, taps=32, sps=2, lead_symbols=2000, lr=1e-4, return_weights=False):
+    """
+    Input:
+        Rx: jax.Array, (Nsymb * sps, Nmodes)
+        Tx: jax.Array, (Nsymb, Nmodes)
+        taps: int, number of taps
+        sps: int, samples per symbol
+        lead_symbols: int, number of symbols used to train the filter
+        lr: list, learning rate for weight and frequency offset
+    Output:
+        z: jax.Array, (Nsymb, Nmodes)  or   (z, weights)
+    """
+    signal = JaxSignal(val=Rx, t=JaxTime(0, 0, sps), Fs=0)
+    truth = JaxSignal(val=Tx, t=JaxTime(0, 0, 1), Fs=0)
+    model = MimoAf(
+        taps=taps,
+        train=lambda n: n < lead_symbols,
+        mimofn=af.lms,
+        learnable=False,
+        mimokwargs={"lr": lr},
+    )
+    z, state = model.init_with_output(jax.random.PRNGKey(0), signal, truth, True, return_weights)
+    return z
+
+
 
 
 def cpr(Rx, Tx, N=61, constSymb=None, carry=None, lead_symbols=2000):
@@ -183,9 +214,12 @@ def cpr(Rx, Tx, N=61, constSymb=None, carry=None, lead_symbols=2000):
     mode = jnp.ones([Nsymb, Nmodes]).at[pilotInd].set(0)
     data = (Tx, Rx, mode)
     theta = scan(GD_vmap, carry, data)[1]  # carry, phis
-    return Rx * jnp.exp(1j * theta), theta, carry
+    output = Rx * jnp.exp(1j * theta)
+
+    return output, theta, carry
 
 
+@partial(jax.jit, static_argnums=(2,3))
 def bps(Rx, constSymb, N, B):
     """
     Blind phase search (BPS) algorithm.
@@ -237,6 +271,7 @@ def bps(Rx, constSymb, N, B):
     )  # (B, Nsymb, Nmodes)
     phase = jnp.sum(onehot * phi[:, None, None], axis=0)
     theta = jnp.unwrap(phase, axis=0, period=np.pi / 2)
+
     return Rx * jnp.exp(1j * theta), theta, None
 
 

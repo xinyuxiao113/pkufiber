@@ -136,22 +136,52 @@ def iterate(
     truth_ndim=2,
     device=None,
 ):
+    """迭代执行自适应滤波器的更新步骤
+
+    Args:
+        update: 更新函数，用于更新滤波器状态
+        step0: 初始步数
+        state: 滤波器初始状态
+        signal: 输入信号
+        truth: 真实值，用于训练模式下的监督学习
+        truth_ndim: 真实值的维度
+        device: 计算设备
+
+    Returns:
+        tuple: (最后一步的步数, (最终状态, 输出结果))
+    """
+    # 生成步数序列
     steps = step0 + jnp.arange(signal.shape[0])
-    # pad dummy truth
+    
+    # 处理真实值
+    # 如果没有提供真实值，创建零数组
+    # 如果提供了真实值，截取到信号长度
     truth = (
         jnp.zeros((0, *signal.shape[1 - truth_ndim :]), dtype=signal.dtype)
         if truth is None
         else truth[: signal.shape[0]]
     )
+    
+    # 对真实值进行填充，使其长度与信号一致
     padw_data_axes = ((0, 0),) * (truth_ndim - 1)
     truth = jnp.pad(truth, ((0, signal.shape[0] - truth.shape[0]), *padw_data_axes))
+    
+    # 组合输入数据
     xs = (steps, signal, truth)
+    
+    # 使用scan函数迭代执行更新
+    # lambda函数接收当前状态和输入数据，返回更新后的状态和输出
     return steps[-1], scan(
         lambda c, xs: update(xs[0], c, xs[1:]), state, xs, jit_device=device
     )
 
 
 def mimo(w, u):
+    '''
+    w: [dim, dim, taps]
+    u: [taps, dim]
+    output: [dim]
+    '''
     return jnp.einsum("ijt,tj->i", w, u)
 
 

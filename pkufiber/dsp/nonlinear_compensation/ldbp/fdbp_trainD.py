@@ -6,7 +6,7 @@ from pkufiber.op import get_beta2, get_beta1
 from pkufiber.core import TorchSignal, TorchTime, TorchInput
 from pkufiber.dsp.op import dispersion_kernel, dconv, nconv
 from pkufiber.dsp.layers import MLP, Parameter
-from pkufiber.dsp.nonlinear_compensation.ldbp.filter import DispersionFilter,NonlinearFilter    
+from pkufiber.dsp.nonlinear_compensation.filter import DispersionFilter,NonlinearFilter    
 
 
 class FDBP_trainD(nn.Module):

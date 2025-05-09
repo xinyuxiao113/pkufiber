@@ -1,31 +1,34 @@
-#!/bin/bash
+# 遍历configs/paper_config所有文件
+for file in $(ls configs/paper_config/1023)
+do
+    ./scripts/train_eq.sh 1023/$file  configs/paper_config/1023/$file/config.yaml
+    python -m scripts.test_eq --path experiments/1023/$file --test_config configs/test_eq.yaml
+done
 
-M_value=41
-rho_value=8
-overlaps=40
-strides=161
-config=configs/0801/frepbc.yaml
-echo "Running experiment with M=$M_value, rho=$rho_value, overlaps=$overlaps, strides=$strides"
-index=80G_3ch_frepbc_M"$M_value"_rho"$rho_value"_ol"$overlaps"_strides"$strides"
-
-# modify the yaml file
-python -m scripts.modify_yaml $config $config train_data.num_symb_per_mode 800000
-python -m scripts.modify_yaml $config $config batch_size 1000
-
-
-# modify the yaml file
-python -m scripts.modify_yaml $config $config model_info.M $M_value
-python -m scripts.modify_yaml $config $config model_info.rho $rho_value
-python -m scripts.modify_yaml $config $config model_info.overlaps $overlaps
-python -m scripts.modify_yaml $config $config model_info.strides $strides
-python -m scripts.modify_yaml $config $config train_data.strides $strides
-python -m scripts.modify_yaml $config $config test_data.strides $strides
+for file in $(ls configs/paper_config/1024)
+do
+    ./scripts/train_eq.sh 1024/$file  configs/paper_config/1024/$file/config.yaml
+    python -m scripts.test_eq --path experiments/1024/$file --test_config configs/test_eq.yaml
+done
 
 
-# training
-./scripts/train_eq.sh $index $config
+for file in $(ls configs/paper_config/1025)
+do
+    ./scripts/train_eq.sh 1025/$file  configs/paper_config/1025/$file/config.yaml
+    python -m scripts.test_eq --path experiments/1025/$file --test_config configs/test_eq.yaml
+done
 
-# testing
-python -m scripts.test_eq --path experiments/$index --test_config configs/dsp/test_eq.yaml
 
-# print
+for file in $(ls configs/paper_config/1105)
+do
+    ./scripts/train_eq.sh 1105/$file  configs/paper_config/1105/$file/config.yaml
+    python -m scripts.test_eq --path experiments/1105/$file --test_config configs/test_eq.yaml
+done
+
+
+
+./scripts/train_ldbp.sh 80G_3ch_fdbp_v1 configs/paper_config/80G_3ch_fdbp_v1/config.yaml
+python -m scripts.test_ldbp --path experiments/80G_3ch_fdbp_v1 --test_config configs/test_ldbp.yaml
+
+./scripts/train_ldbp.sh 80G_3ch_fdbp_v7 configs/paper_config/80G_3ch_fdbp_v7/config.yaml
+python -m scripts.test_ldbp --path experiments/80G_3ch_fdbp_v7 --test_config configs/test_ldbp.yaml

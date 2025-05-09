@@ -1,0 +1,57 @@
+# model setting
+
+dbp_name: FDBP
+
+dbp_info:
+  Nmodes: 2
+  step: 10
+  dtaps: 2001
+  ntaps: 101
+  d_train: False
+  d_share: True 
+  n_share: False
+
+  L: 2000000
+  D: 16.5 
+  Fs: 160000000000
+  Fc: 193414489032258.06
+  gamma: 0.0016567
+
+
+# data setting
+train_data:
+  path: "/home/xiaoxinyu/pkufiber/data/80G_3ch_batch40.h5"
+  Nmodes: 2
+  Nch_list: [3]
+  Rs_list: [80]
+  Pch_list: [6]
+  strides: 2000
+  num_symb_per_mode: 400000
+  truncate: 0 
+  Tx_window: True 
+  pre_transform: Rx
+
+test_data:
+  path: "/home/xiaoxinyu/TorchFiber/dataset_A800/test.h5"
+  Nmodes: 2
+  Nch_list: [3]
+  Rs_list: [80]
+  Pch_list: [6]
+  strides: 100000
+  num_symb_per_mode: 150000
+  truncate: 0 
+  Tx_window: True 
+  pre_transform: Rx
+
+
+
+# training setting
+epochs: 30
+save_interval: 10
+batch_size: 10
+dbp_lr: 0.001
+conv_lr: 0.01
+lr_decay_step: 10
+decay_gamma: 0.1
+loss_type: MSE
+device: 'cuda:0'

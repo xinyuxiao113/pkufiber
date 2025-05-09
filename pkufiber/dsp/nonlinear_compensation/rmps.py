@@ -41,7 +41,7 @@ def rmps_fdbp(Nd, Nf, step, sps=2):
     return sps*step*(rmps_edc(Nd) + rmps_edc(Nf)/4 * 2 + 6) 
 
 
-def rmps_dbp(Nstps, Nspan, Nd_EDC, sps=1):
+def rmps_dbp(Nstps, Nspan, Nd_EDC=Nd_EDC, sps=1):
     '''
         Real Multiply per Sample (RMPS) for DBP.
     Input:

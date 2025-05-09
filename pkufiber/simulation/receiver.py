@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import warnings
 from torch.fft import fft
-from typing import Tuple
+from typing import Tuple,Union
 
 from pkufiber.op import get_omega, mean_power, circFilter
 from pkufiber.utils import qfactor, calc_time
@@ -209,7 +209,7 @@ def ber(y: torch.Tensor, truth: torch.Tensor, M=16):
     }
 
 
-def qfactor_all(Rx: torch.Tensor, Tx: torch.Tensor) -> float:
+def qfactor_all(Rx: Union[torch.Tensor, np.ndarray], Tx: Union[torch.Tensor, np.ndarray]) -> float:
     """
     Calculate Q^2 factor for all modes.
     Input:
@@ -218,7 +218,10 @@ def qfactor_all(Rx: torch.Tensor, Tx: torch.Tensor) -> float:
     Output:
         Q: [Nmodes]
     """
-
+    if isinstance(Rx, np.ndarray):
+        Rx = torch.tensor(Rx)
+    if isinstance(Tx, np.ndarray):
+        Tx = torch.tensor(Tx)
     ber_value = ber(Rx, Tx)['BER']
     Q = qfactor(np.mean(ber_value))
     return Q

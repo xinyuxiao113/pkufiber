@@ -1,0 +1,19 @@
+
+
+Pch: [-3, -2, -1, 0, 1, 2, 3, 4]
+
+
+path: /home/xiaoxinyu/snse/data/test.h5
+Nmodes: 2
+Nch: 3
+Rs: 80
+strides: 100000
+num_symb: 150000
+truncate: 0 
+Tx_window: True 
+pre_transform: Rx
+
+
+batch_size: 1
+taps: 32
+device: 'cuda:0'

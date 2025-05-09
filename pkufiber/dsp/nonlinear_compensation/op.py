@@ -51,7 +51,7 @@ def get_power(task_info, Nmodes, device):
     return P
 
 
-def estimate_dtaps(L, bandwitdth, samplerate, beta2=2.1044895291667417e-26, overfactor=1.8):
+def estimate_dtaps(L, bandwitdth, samplerate, beta2=2.1044895291667417e-26):
     '''
         estimate dtaps in time domain.
     Input:
@@ -62,5 +62,8 @@ def estimate_dtaps(L, bandwitdth, samplerate, beta2=2.1044895291667417e-26, over
         int.
 
     '''
-    mintaps = int(np.ceil(2 * np.pi * L * beta2 * bandwitdth * samplerate) * overfactor)
+    if L > 80e3:
+        mintaps = int(np.ceil(2 * np.pi * L * beta2 * bandwitdth * samplerate) * 1.8)
+    else:
+         mintaps = int(np.ceil(2 * np.pi * L * beta2 * bandwitdth * samplerate) * 3)
     return mintaps - (mintaps % 4) + 5

@@ -3,6 +3,7 @@ import argparse, os , yaml, torch.nn as nn
 from torch.utils.data import DataLoader
 from functools import partial
 from torch.utils.tensorboard.writer import SummaryWriter
+from typing import Union
 
 import pkufiber as pf
 import pkufiber.dsp as dsp
@@ -39,7 +40,7 @@ def init_model(model_name, model_info):
     return dbp
 
 
-def test_model(net, test_loader, taps=32, device='cuda:0', ber_discard=20000):
+def test_model(net: Union[FDBP, MetaDBP], test_loader: DataLoader, taps:int=32, device='cuda:0', ber_discard=20000):
     '''
     Test DBP + ADF.
         net: LDBP module.
@@ -58,6 +59,7 @@ def test_model(net, test_loader, taps=32, device='cuda:0', ber_discard=20000):
 
     # load data
     assert test_loader.batch_size == 1, 'Batch size should be 1'
+    assert len(test_loader) > 0, 'Test data is empty'
 
     z1_list = []
     z2_list = []
@@ -66,7 +68,11 @@ def test_model(net, test_loader, taps=32, device='cuda:0', ber_discard=20000):
         symb = TorchSignal(val=Tx, t=TorchTime(0,0,1)).to(device)
         info = info.to(device)
 
-        # DBP
+        # FDBP
+        if type(net) == FDBP:
+            net.update_Dkernel(torch.mean(info[:,1]).cpu().item(), torch.mean(info[:,2]).cpu().item())
+            # net.Fs = torch.mean(info[:, 2].cpu()).item()  # info: [P, Fi, Fs, Nch]
+            net = net.to(device)
         with torch.no_grad():
             y = net(signal, info)
     
@@ -82,7 +88,6 @@ def test_model(net, test_loader, taps=32, device='cuda:0', ber_discard=20000):
         assert z1.shape[0] > ber_discard, 'ber_discard is too large'
         z1_list.append(z1[ber_discard:])
         z2_list.append(z2[ber_discard:])
-    
     z1 = torch.cat(z1_list, dim=0)
     z2 = torch.cat(z2_list, dim=0)
     
@@ -97,7 +102,7 @@ def test_model(net, test_loader, taps=32, device='cuda:0', ber_discard=20000):
 
 
 
-def train_model(writer, net: nn.Module, conv: nn.Module, train_loader, test_loader, optimizer, scheduler , epochs:int, model_path: str, save_model=True, save_interval=1, device='cuda:0', model_info={}):
+def train_model(writer, net: FDBP, conv: nn.Module, train_loader, test_loader, optimizer, scheduler , epochs:int, model_path: str, save_model=True, save_interval=1, device='cuda:0', model_info={}):
     '''
     Train DBP + ADF.
         writer: SummaryWriter.

@@ -12,7 +12,7 @@ from pkufiber.dsp.op import dispersion_kernel, dconv, nconv
 from pkufiber.op import get_beta2, get_beta1
 from pkufiber.dsp.nonlinear_compensation.pbc.features import TripletFeatures, IndexType
 from pkufiber.dsp.nonlinear_compensation.pbc import EqStftPBC, EqStftAMPBC
-from pkufiber.dsp.nonlinear_compensation.ldbp.filter import DispersionFilter,NonlinearFilter   
+from pkufiber.dsp.nonlinear_compensation.filter import DispersionFilter,NonlinearFilter   
 
 '''
 每个模型都需要 M, overlaps参数

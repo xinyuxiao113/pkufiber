@@ -139,6 +139,12 @@ class FiberDataset(Dataset):
             raise ValueError("No such dataset")
 
         self.Rx_sps = sps
+
+        self.max_window_size = np.min([tx.shape[0] for tx in self.Tx])
+        if self.window_size > self.max_window_size:
+            self.window_size = self.max_window_size
+            print(f"window_size should be smaller than the {self.max_window_size}, we have set it to {self.max_window_size}")
+
         self.length_list = [
             (tx.shape[0] - self.window_size) // self.strides + 1 for tx in self.Tx
         ]

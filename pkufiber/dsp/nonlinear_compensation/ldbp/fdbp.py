@@ -76,6 +76,7 @@ class FDBP(nn.Module):
         beta1 = (
             get_beta1(self.D, self.Fc, self.Fi) / 1e3
         )  # First-order dispersion coefficient [s/m]
+        # print(Fs, beta2, beta1)
         Dkernel_init = dispersion_kernel(
             -self.dz, self.dtaps, Fs, beta2, beta1, domain="time"
         ).to(torch.complex64)
@@ -102,6 +103,23 @@ class FDBP(nn.Module):
                 for _ in range(n_num)
             ]
         )  # Nonlinear kernel [Nmodes, Nmodes, ntaps]
+
+    def update_Dkernel(self, Fi: float, Fs: Union[torch.Tensor, float]):
+        """
+        Update the dispersion kernel.
+
+        Args:
+            Fi: Initial frequency as a torch.Tensor.
+            Fs: Sampling rate as a torch.Tensor or float.
+        """
+        beta2 = get_beta2(self.D, self.Fc) / 1e3
+        beta1 = get_beta1(self.D, self.Fc, Fi) / 1e3
+        Dkernel = dispersion_kernel(
+            -self.dz, self.dtaps, Fs, beta2, beta1, domain="time"
+        )
+        for i in range(len(self.Dkernel_real)):
+            self.Dkernel_real[i].data = Dkernel.real
+            self.Dkernel_imag[i].data = Dkernel.imag
 
     def forward(self, signal: TorchSignal, task_info: torch.Tensor) -> TorchSignal:
         """

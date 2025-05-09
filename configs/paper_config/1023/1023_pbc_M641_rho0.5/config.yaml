@@ -1,0 +1,44 @@
+# model setting
+
+model_name: EqPBCstep
+
+model_info:
+  M: 641
+  rho: 0.5
+
+# data setting
+train_data:
+  path: /home/xiaoxinyu/pkufiber/data/80G_3ch_batch40.h5
+  Nmodes: 2
+  Nch_list: [3]
+  Rs_list: [80]
+  Pch_list: [3]
+  strides: 41
+  num_symb_per_mode: 800000
+  truncate: 20000
+  pre_transform: Rx_CDCDDLMS(taps=32,lr=[0.015625, 0.0078125])
+
+
+test_data:
+  path: /home/xiaoxinyu/TorchFiber/dataset_A800/test.h5
+  Nmodes: 2
+  Nch_list: [3]
+  Rs_list: [80]
+  Pch_list: [3]
+  strides: 41
+  num_symb_per_mode: 100000
+  truncate: 20000
+  pre_transform: Rx_CDCDDLMS(taps=32,lr=[0.015625, 0.0078125])
+
+
+# training setting
+seed: 1232
+epochs: 30
+save_interval: 10
+batch_size: 500
+# lr: 0.0000001
+lr: 0.00001
+lr_decay_step: 20
+decay_gamma: 0.1
+loss_type: mse
+device: cuda:0

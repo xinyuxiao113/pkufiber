@@ -75,7 +75,6 @@ class MetaDBP(nn.Module):
         self.D = D
         self.Fc = Fc
         self.Fi = Fi
-        self.Fs = Fs
         self.overlaps = step * ((dtaps - 1) + (ntaps - 1)) // 2
 
     def set_ntaps(self, ntaps: int):

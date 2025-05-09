@@ -66,7 +66,7 @@ for pch in data_cfg['Pch']:
     Q.append(metric['Qsq'])
 
 print('Result are stored in:', args.path + '/results')
-os.system(f'cp {args.test_config} {args.path}/results/test.yaml')
+os.system(f'cp "{args.test_config}" "{args.path}/results/test.yaml"')
 np.save(args.path + '/results/qfactor.npy', Q) 
 np.save(args.path + '/results/power.npy', data_cfg['Pch'])
 

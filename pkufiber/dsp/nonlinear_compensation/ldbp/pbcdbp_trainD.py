@@ -7,7 +7,7 @@ from pkufiber.core import TorchSignal, TorchTime, TorchInput
 from pkufiber.dsp.op import dispersion_kernel, dconv, nconv
 from pkufiber.dsp.layers import MLP, Parameter
 from pkufiber.dsp.nonlinear_compensation.pbc import EqPBCstep, EqAMPBCstep
-from pkufiber.dsp.nonlinear_compensation.ldbp.filter import DispersionFilter,NonlinearFilter    
+from pkufiber.dsp.nonlinear_compensation.filter import DispersionFilter,NonlinearFilter    
 
 
 class PbcDBP_trainD(nn.Module):

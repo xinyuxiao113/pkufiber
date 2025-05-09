@@ -1,5 +1,5 @@
 """
-    NN equalizer.
+   PBC FO features and SO features.
 """
 
 import torch.nn as nn, torch, numpy as np, torch, matplotlib.pyplot as plt

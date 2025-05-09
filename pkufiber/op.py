@@ -236,3 +236,35 @@ def istft_on_dimension(stft_result, original_length, n_fft, hop_length, win_leng
     reconstructed_signal = reconstructed_signal.transpose(dim, -1).reshape(original_shape)
 
     return reconstructed_signal
+
+
+
+def periodic_padding(tensor, pad_width, dim):
+    """
+    使用 F.pad 实现张量的周期填充。
+
+    参数:
+    - tensor: 输入张量。
+    - pad_width: 填充宽度（两端填充的长度）。
+    - dim: 指定填充的维度。
+
+    返回:
+    - 填充后的张量。
+    """
+    if pad_width == 0:
+        return tensor
+
+    # 将指定维度移动到最后一维，以方便 F.pad 操作
+    tensor = tensor.transpose(dim, -1)
+    
+    # 提取两端的填充值
+    left_padding = tensor[..., -pad_width:]  # 右端的数据用于填充左侧
+    right_padding = tensor[..., :pad_width]  # 左端的数据用于填充右侧
+    
+    # 拼接两端并使用 F.pad 进行填充
+    tensor = torch.cat([left_padding, tensor, right_padding], dim=-1)
+    
+    # 将维度还原到原始顺序
+    tensor = tensor.transpose(dim, -1)
+    
+    return tensor

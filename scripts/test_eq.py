@@ -48,7 +48,8 @@ if __name__ == "__main__":
     Tx_window = True if model_cfg['model_name'] in ['MultiStepAMPBC', 'MultiStepPBC', 'EqFno', 
                                 'EqFrePBC', 'EqFreAMPBC',  'EqAMPBCstep', 'EqPBCstep', 'EqBiLSTMstep', 'EqConvAMPBC', 'EqStftPBC','EqStftAMPBC', 'EqFreqTimePBC',
                                   'EqDBP', 'EqDBP_test', 'EqPbcDBP','EqAMPbcDBP', 'EqFreqPbcDBP', 'EqFreqAMPbcDBP',
-                                  'EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD'] else False
+                                  'EqDBP_trainD', 'EqPbcDBP_trainD', 'EqAMPbcDBP_trainD', 'EqFreqPbcDBP_trainD', 'EqFreqAMPbcDBP_trainD', 'EqSNSEDBP', 
+                                  'EqStftSnsePBC'] else False
     
     # Tx_window = False if model_cfg['model_name'] in ['EqBiLSTM', 'EqBiLSTMClass', 'EqCNNBiLSTM', 'EqMLP', 'EqID', 'EqBiLSTMstep'] else True
     window_size = model.overlaps + strides

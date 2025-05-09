@@ -1,0 +1,14 @@
+
+
+Pch: [2,3,4,5,6,7]
+
+path: /home/xiaoxinyu/snse/data/test.h5
+Nmodes: 2
+Nch: 3
+Rs: 160
+num_symb: 100000
+truncate: 20000
+pre_transform: Rx_CDCDDLMS(taps=32,lr=[0.015625, 0.0078125])
+
+batch_size: 50
+device: 'cuda:0'

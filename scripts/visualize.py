@@ -53,6 +53,7 @@ def load_experiment(path):
 
 def load_baseline(config_path, method='CDC'):
     '''
+    config_path: path to the config file
     method: CDC, DBP%d, %d = [1,2,4,8,16,32,64]
     '''
     with open(config_path) as f: config = yaml.load(f, Loader=yaml.FullLoader)
@@ -68,4 +69,45 @@ def load_baseline(config_path, method='CDC'):
         metrics.append(pf.qfactor_all(Rx, Tx))
     
     return metrics, config['Pch']
+
+
+def get_base(path='/home/xiaoxinyu/TorchFiber/_outputs/paper_txt/Final_result.txt'):
+    import pandas as pd
+    import re
+
+    # 定义文件路径
+    file_path = path
+
+    # 定义列名
+    columns = ['Nmodes', 'Rs', 'Nch', 'Pch', 'Method', 'Value']
+
+    # 初始化一个空列表来保存数据
+    data = []
+
+    # 打开文件并逐行读取
+    with open(file_path, 'r') as file:
+        for line in file:
+            # 去除行末尾的换行符
+            line = line.strip()
+            
+            # 使用正则表达式匹配并提取数据
+            match = re.match(r'Nmodes=(\d+), Rs=(\d+), Nch=(\d+), Pch=(-?\d+), (.*): (-?[\d.]+|inf|-inf)', line)
+            if match:
+                nmodes = int(match.group(1))
+                rs = int(match.group(2))
+                nch = int(match.group(3))
+                pch = int(match.group(4))
+                method = match.group(5).strip()
+                value = match.group(6)
+                # 处理值为'inf'的情况
+                value = float(value) if value != 'inf' else float('inf')
+                
+                # 将数据添加到列表
+                data.append([nmodes, rs, nch, pch, method, value])
+            else:
+                print(line)
+
+    # 创建DataFrame
+    df = pd.DataFrame(data, columns=columns)
+    return df
         

@@ -26,6 +26,7 @@ import pkufiber.dsp as dsp
 import pkufiber.simulation as simulation
 import pkufiber.core as core
 import pkufiber.utils as utils
+import pkufiber.tools as tools
 import pkufiber.op as op
 
 from .core import TorchInput, TorchSignal, TorchTime
@@ -46,6 +47,7 @@ __all__ = [
     "simulation",
     "core",
     "utils",
+    "tools",
     "op",
     "ser",
     "ber",

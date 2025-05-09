@@ -1,5 +1,5 @@
 """
-    NN equalizer.
+    Frequency domain PBC.
 """
 
 import torch.nn as nn, torch, numpy as np, torch
