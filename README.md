@@ -19,9 +19,9 @@ pip install -e .
 You have two options to prepare the dataset:
 
 1. Download the pre-generated dataset:
-Download from [here](https://drive.google.com/file/d/1-_0000000000000000000000000000000000000000/view?usp=sharing) and place it in the `data` folder.
+Download from [here](https://drive.google.com/) and place it in the `data` folder. (the link is not available yet, we will fix it soon)
 
-2. Generate the simulation dataset:
+1. Generate the simulation dataset:
 ```bash
 python -m scripts.data --config configs/data/80G_3ch.yaml --path data/train.h5
 python -m scripts.data --config configs/data/80G_3ch.yaml --path data/test.h5
