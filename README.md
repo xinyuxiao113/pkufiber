@@ -158,6 +158,17 @@ If you want to train the model by yourself, you would better work on a GPU with 
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Cite This Project
+```
+@misc{Xiao2025pkufiber,
+  author       = {Xinyu Xiao},
+  title        = {{pkufiber: Code and data for "Learning effective nonlinear operator for high speed optical compensation system"}},
+  year         = {2025},
+  howpublished = {\url{https://github.com/xinyuxiao113/pkufiber }},
+  note         = {Accessed: 2025-05-22}
+}
+```
+
 <!-- ## Citation
 
 If you use this code in your research, please cite our paper:
